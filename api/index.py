@@ -4,6 +4,8 @@ import requests
 import base64
 import cv2
 
+# Initialize Flask app
+app = Flask(__name__)
 # IBM Watson ML credentials
 API_KEY = "hTWgNz0tDfdj5C3IFCPsipAExOSYBQCciJkPpnDnFyhm"
 
@@ -54,9 +56,6 @@ def predict_image(file):
         return predicted_class, confidence
     except Exception as e:
         return None, f"Prediction error: {e}"
-
-# Initialize Flask app
-app = Flask(__name__)
 
 @app.route('/api/python', methods=['GET'])
 def hello():
