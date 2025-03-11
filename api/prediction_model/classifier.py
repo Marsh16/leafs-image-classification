@@ -3,7 +3,6 @@ import numpy as np
 import base64
 from PIL import Image
 import io
-from ibm_watson_machine_learning import APIClient
 
 # IBM Watson ML credentials
 WML_CREDENTIALS = {
