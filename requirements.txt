@@ -1,4 +1,4 @@
-numpy
-requests
-opencv-python
+# numpy
+# requests
+# opencv-python
 Flask==3.0.3
