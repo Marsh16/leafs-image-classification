@@ -4,7 +4,7 @@ from prediction_model.classifier import predict_image
 # Initialize Flask app
 app = Flask(__name__)
 
-@app.route('/api/hello', methods=['GET'])
+@app.route('/api/hello')
 def hello():
     return jsonify({
         "result": "Hello, this is leafs api"
@@ -30,5 +30,5 @@ def process_image():
         "result": "This image most likely belongs to {} with a {:.2f}% confidence.".format(predicted_class, confidence)
     }), 200
 
-# if __name__ == '__main__':
-#     app.run(debug=True,port=5005)
+if __name__ == '__main__':
+    app.run(debug=True,port=5005)
