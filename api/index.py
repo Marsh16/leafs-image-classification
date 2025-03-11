@@ -4,11 +4,9 @@ from prediction_model.classifier import predict_image
 # Initialize Flask app
 app = Flask(__name__)
 
-@app.route('/api/hello')
+@app.route('/api/hello', methods=['GET'])
 def hello():
-    return jsonify({
-        "result": "Hello, this is leafs api"
-    }), 200
+    return "hello"
 
 @app.route('/api/predict', methods=['POST'])
 def process_image():
