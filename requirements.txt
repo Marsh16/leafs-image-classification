@@ -1,1 +1,5 @@
-Flask==3.0.3
+tensorflow
+numpy
+pillow
+ibm-watson-machine-learning
+flask
