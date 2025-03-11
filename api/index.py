@@ -4,8 +4,6 @@ from prediction_model.classifier import predict_image
 # Initialize Flask app
 app = Flask(__name__)
 
-DEPLOYMENT_UID = "1a1b1ba9-87d3-4aea-ae58-311fe384fbdb"
-
 @app.route('/api/predict', methods=['POST'])
 def process_image():
     """Process the incoming image and return the prediction."""
@@ -17,7 +15,7 @@ def process_image():
     if not file:
         return jsonify({"error": "No data provided"}), 400
 
-    predicted_class, confidence = predict_image(DEPLOYMENT_UID, file)
+    predicted_class, confidence = predict_image(file)
 
     if predicted_class is None:
         return jsonify({"error": confidence}), 500
@@ -27,4 +25,4 @@ def process_image():
     }), 200
 
 if __name__ == '__main__':
-    app.run(debug=True,port=5004)
+    app.run(debug=True,port=5005)
