@@ -4,7 +4,7 @@ from prediction_model.classifier import predict_image
 # Initialize Flask app
 app = Flask(__name__)
 
-@app.route('/api/hello', methods=['GET'])
+@app.route('/api/hello')
 def hello():
     return "hello"
 
