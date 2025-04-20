@@ -7,7 +7,7 @@ import cv2
 # Initialize Flask app
 app = Flask(__name__)
 # IBM Watson ML credentials
-API_KEY = "hTWgNz0tDfdj5C3IFCPsipAExOSYBQCciJkPpnDnFyhm"
+API_KEY = "BP99mfadlrhSUdGGg73bsRKZf-nDHGWO1J7OMGbsCBsD"
 
 CLASS_NAMES = ['Anthracnose', 'Bacterial Canker', 'Cutting Weevil', 'Die Back', 
                'Gall Midge', 'Healthy', 'Powdery Mildew', 'Sooty Mould']
@@ -45,7 +45,7 @@ def predict_image(file):
     
     try:
         response = requests.post(
-            'https://jp-tok.ml.cloud.ibm.com/ml/v4/deployments/1a1b1ba9-87d3-4aea-ae58-311fe384fbdb/predictions?version=2021-05-01',
+            'https://jp-tok.ml.cloud.ibm.com/ml/v4/deployments/b7b56897-687b-41c3-aa44-f629813d2aa6/predictions?version=2021-05-01',
             json=payload_scoring, 
             headers=get_token_header()
         )
