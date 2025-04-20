@@ -2,3 +2,5 @@ numpy
 requests
 opencv-python-headless
 Flask==3.0.3
+flask_cors
+pillow
