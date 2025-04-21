@@ -26,7 +26,7 @@ def get_token_header():
         )
         token_response.raise_for_status()
         mltoken = token_response.json()["access_token"]
-        return {'Content-Type': 'application/json', 'Authorization': f'Bearer {mltoken}'}
+        return {"Accept": "application/json",'Content-Type': 'application/json', 'Authorization': f'Bearer {mltoken}'}
     except Exception as e:
         raise Exception(f"Failed to get token: {e}")
 
