@@ -84,13 +84,21 @@ def get_llm_response():
         questions = data.get('questions')
 
         prompt = f"""
-        Act like a plant doctor. A mango leaf has been diagnosed with the disease: '{disease_name}'.
-        1. Explain what this disease is.
-        2. Describe symptoms clearly.
-        3. Recommend treatment (preferably organic or accessible).
-        4. Give one or two prevention tips.
-        
-        Answer the following question based on that information: '{questions}'
+        You are a friendly and knowledgeable plant doctor helping a mango farmer.
+
+        The mango leaf has been diagnosed with: **'{disease_name}'**.
+
+        Start by providing a detailed explanation to help the farmer understand the situation:
+        1. What is this disease? Explain it in simple terms.
+        2. What are the common symptoms to look out for?
+        3. What treatments can help, especially organic or easily accessible ones?
+        4. What are one or two effective prevention tips?
+
+        Now, the farmer has a specific question: **'{questions}'**
+
+        If the question relates to the disease, answer it in depth using the information above. If it's a bit different, do your best to provide a helpful and informative response based on your plant health knowledge.
+
+        Keep your tone warm and farmer-friendly. Use bullet points or short paragraphs if it helps clarity.
         """
 
         body = {
