@@ -4,9 +4,11 @@ import requests
 import base64
 from PIL import Image
 import io
+from flask_cors import CORS
 
 # Initialize Flask app
 app = Flask(__name__)
+CORS(app)  # Enable CORS for cross-origin requests
 
 # IBM Watson ML credentials (you can load these from environment variables for security)
 API_KEY = "BP99mfadlrhSUdGGg73bsRKZf-nDHGWO1J7OMGbsCBsD"
