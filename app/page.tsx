@@ -1,6 +1,5 @@
 "use client";
 
-import type React from "react";
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { Clock } from "lucide-react";
@@ -20,6 +19,11 @@ export default function Home() {
   const [currentDateTime, setCurrentDateTime] = useState<string>(
     formatDateTime(new Date())
   );
+  const [question, setQuestion] = useState<string>("");
+  const [messages, setMessages] = useState<{ role: string; content: string }[]>(
+    []
+  );
+
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const { width, height } = useWindowSize();
 
@@ -65,10 +69,17 @@ export default function Home() {
       reader.onload = async (event) => {
         if (event.target?.result) {
           const base64String = (event.target.result as string).split(",")[1];
-          setCurrentImage(event.target.result as string);
+          const imageSrc = event.target.result as string;
+
+          setCurrentImage(imageSrc);
           setPrediction(null);
           setConfidence(null);
           setLoading(true);
+
+          setMessages((prev) => [
+            ...prev,
+            { role: "user", content: `${imageSrc}` },
+          ]);
 
           try {
             const response = await fetch(
@@ -84,7 +95,7 @@ export default function Home() {
 
             if (response.ok) {
               const entry = {
-                image: event.target.result,
+                image: imageSrc,
                 class: result.class,
                 confidence: result.confidence,
                 timestamp: new Date().toISOString(),
@@ -99,6 +110,14 @@ export default function Home() {
                 "predictionHistory",
                 JSON.stringify(updatedHistory)
               );
+
+              setMessages((prev) => [
+                ...prev,
+                {
+                  role: "assistant",
+                  content: `This leaf is likely ${result.class} with ${result.confidence}% confidence.`,
+                },
+              ]);
             } else {
               console.error("Prediction error:", result.error);
             }
@@ -114,8 +133,60 @@ export default function Home() {
     }
   };
 
+  const handleLlmQuestion = async () => {
+    if (!question) {
+      alert("Please provide a question.");
+      return;
+    }
+
+    setMessages((prev) => [...prev, { role: "user", content: question }]);
+    setQuestion("");
+    setLoading(true);
+
+    try {
+      const response = await fetch(
+        "https://leafs-ai.vercel.app/api/questions",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            disease_name: prediction,
+            questions: question,
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: result.response },
+        ]);
+      } else {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content: "Sorry, I couldn't fetch a response at the moment.",
+          },
+        ]);
+      }
+    } catch (error) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: "Sorry, something went wrong.",
+        },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <main className="flex min-h-screen bg-gradient-to-br from-purple-600 to-blue-400 dark:bg-gradient-to-br dark:from-purple-800 dark:to-blue-900">
+    <main className="flex min-h-screen bg-gradient-to-br from-purple-600 to-blue-400 dark:from-purple-800 dark:to-blue-900">
       {/* Sidebar */}
       <aside className="w-full md:w-1/4 bg-white dark:bg-zinc-900 p-4 overflow-y-auto border-r border-zinc-300 dark:border-zinc-700">
         <h2 className="text-lg font-bold mb-4 text-center text-black dark:text-white">
@@ -161,9 +232,7 @@ export default function Home() {
       <section className="flex-1 p-6">
         <div className="flex justify-between items-center mb-8">
           <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-bold text-white">
-              Leafs.ai 🍃✨
-            </h1>
+            <h1 className="text-3xl font-bold text-white">Leafs.ai 🍃✨</h1>
           </div>
 
           <div className="flex items-center">
@@ -172,80 +241,89 @@ export default function Home() {
         </div>
 
         <div className="flex flex-col items-center">
-          {!currentImage ? (
-            <div className="text-center mb-16 text-white">
-              <h2 className="text-2xl font-mono mb-2">Hello Farmer 👨‍🌾</h2>
-              <p className="text-xl font-mono">Drop a mango leaf for vibes 🍵</p>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center mb-8">
-              <div className="rounded-3xl overflow-hidden mb-6 bg-white p-4 shadow-md">
-                <Image
-                  src={currentImage}
-                  alt="Uploaded leaf"
-                  width={400}
-                  height={300}
-                  className="rounded-2xl"
-                />
+          {/* Chat UI */}
+          <div className="w-full max-w-3xl py-6 space-y-3">
+            {messages.map((msg, idx) => (
+              <div
+                key={idx}
+                className={`p-3 rounded-lg font-mono text-sm max-w-[85%] whitespace-pre-line ${
+                  msg.role === "user"
+                    ? "ml-auto bg-purple-600 text-white"
+                    : "bg-zinc-100 dark:bg-zinc-700 text-black dark:text-white"
+                }`}
+              >
+                { msg.content.startsWith("data:image/") && msg.content.includes("base64,") ? (
+                  <div className="mb-6 flex justify-center">
+                    <Image
+                      src={msg.content}
+                      alt="Uploaded Leaf"
+                      width={300}
+                      height={300}
+                      className="rounded-lg shadow-lg border border-zinc-300 dark:border-zinc-700"
+                    />
+                  </div>
+                ) : (
+                  <div
+                    className={`p-3 rounded-lg font-mono text-sm max-w-[85%] whitespace-pre-line ${
+                      msg.role === "user"
+                        ? "ml-auto bg-purple-600 text-white"
+                        : "bg-zinc-100 dark:bg-zinc-700 text-black dark:text-white"
+                    }`}
+                  >
+                    {msg.content}
+                  </div>
+                )}
               </div>
-              {prediction && confidence && (
-                <div className="text-center max-w-md font-mono text-white">
-                  <p>
-                    This leaf is likely <strong>{prediction}</strong> 🍃
-                    <br />
-                    Confidence? <strong>{confidence}%</strong>
-                  </p>
+            ))}
+            {loading && (
+              <div className="text-sm text-zinc-500 animate-pulse font-mono">
+                Thinking...
+              </div>
+            )}
+          </div>
 
-                  {/* Confetti Only for Healthy Leaf Predictions */}
-                  {prediction.toLowerCase().includes("healthy") &&
-                    confidence > 75 && (
-                      <Confetti
-                        width={width}
-                        height={height}
-                        numberOfPieces={250}
-                        recycle={false}
-                        colors={["#00F2B4", "#FF77FF", "#6B5B95", "#5DD6F5"]}
-                      />
-                    )}
+          <Card className="w-full max-w-3xl p-6 bg-white dark:bg-zinc-800 shadow-lg space-y-4">
+            <div className="flex items-end gap-2">
+              <label className="cursor-pointer text-zinc-500 hover:text-purple-500">
+                📤
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageUpload}
+                  ref={fileInputRef}
+                />
+              </label>
 
-                  {/* Slay message when healthy */}
-                  {prediction.toLowerCase().includes("healthy") && (
-                    <p className="mt-2 text-green-500 dark:text-green-300 animate-pulse">
-                      This leaf is totally fine. Slay, nature queen 🌿💅
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {loading && (
-                <div className="text-center mt-4 text-white font-mono animate-pulse">
-                  Hold up... we’re vibing your leaf 🌈
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Upload Card */}
-          <Card className="w-full max-w-md p-4 flex items-center justify-between bg-white dark:bg-zinc-800">
-            <label className="text-zinc-500 dark:text-zinc-400 font-mono cursor-pointer flex-grow">
-              Upload that 🍃 pic
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleImageUpload}
-                ref={fileInputRef}
+              <textarea
+                placeholder="Ask a question about the disease..."
+                className="flex-grow resize-none rounded-lg p-3 text-sm bg-zinc-100 dark:bg-zinc-900 text-black dark:text-white border border-zinc-300 dark:border-zinc-700 font-mono"
+                rows={2}
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
               />
-            </label>
-            <Button
-              variant="outline"
-              size="icon"
-              className="rounded-full"
-              onClick={handleClick}
-            >
-              <span className="text-2xl">📤</span>
-            </Button>
+
+              <Button
+                onClick={handleLlmQuestion}
+                className="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-4 py-2 rounded-lg"
+              >
+                Send
+              </Button>
+            </div>
           </Card>
+
+          {/* Confetti */}
+          {prediction?.toLowerCase().includes("healthy") &&
+            confidence &&
+            confidence > 75 && (
+              <Confetti
+                width={width}
+                height={height}
+                numberOfPieces={250}
+                recycle={false}
+                colors={["#00F2B4", "#FF77FF", "#6B5B95", "#5DD6F5"]}
+              />
+            )}
         </div>
 
         <Footer />
