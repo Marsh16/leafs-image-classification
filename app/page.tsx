@@ -9,29 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/Card";
 import { Footer } from "@/components/Footer";
 import Confetti from "react-confetti";
-
-export function useWindowSize() {
-  const [windowSize, setWindowSize] = useState({
-    width: 0,
-    height: 0,
-  });
-
-  useEffect(() => {
-    function handleResize() {
-      setWindowSize({
-        width: window.innerWidth,
-        height: window.innerHeight,
-      });
-    }
-
-    window.addEventListener("resize", handleResize);
-    handleResize(); // Call initially to set the size
-
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  return windowSize;
-}
+import useWindowSize from "./useWindowSize";
 
 export default function Home() {
   const [currentImage, setCurrentImage] = useState<string | null>(null);
