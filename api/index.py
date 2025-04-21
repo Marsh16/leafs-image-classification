@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 import numpy as np
+from flask_cors import CORS
 import requests
 import base64
 from PIL import Image
@@ -117,7 +118,7 @@ def get_llm_response():
             raise Exception(f"Error fetching LLM response: {response.text}")
 
         result = response.json()
-        return jsonify({'response': result['output'][0]['text']}), 200
+        return jsonify({'response': result['results'][0]['generated_text']}), 200
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
