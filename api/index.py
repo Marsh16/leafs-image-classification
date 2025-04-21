@@ -107,7 +107,7 @@ def get_llm_response():
         headers = {
             "Accept": "application/json",
             "Content-Type": "application/json",
-            "Authorization": "Bearer " + get_token_header()["Authorization"]
+            "Authorization": get_token_header()["Authorization"]
         }
 
         url = "https://jp-tok.ml.cloud.ibm.com/ml/v1/text/generation?version=2023-05-29"
