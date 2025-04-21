@@ -70,10 +70,57 @@ def predict_image(encoded_string):
         return predicted_class, confidence
     except Exception as e:
         return None, str(e)
+    
+@app.route('/api/questions', methods=['POST'])
+def get_llm_response():
+    try:
+        data = request.get_json()
+        
+        if not data or 'disease_name' not in data or 'questions' not in data:
+            return jsonify({'error': 'Missing required data: disease_name or questions'}), 400
 
-@app.route('/api/python', methods=['GET'])
-def hello():
-    return "Hello from Flask server!"
+        disease_name = data.get('disease_name')
+        questions = data.get('questions')
+
+        prompt = f"""
+        Act like a plant doctor. A mango leaf has been diagnosed with the disease: '{disease_name}'.
+        1. Explain what this disease is.
+        2. Describe symptoms clearly.
+        3. Recommend treatment (preferably organic or accessible).
+        4. Give one or two prevention tips.
+        
+        Answer the following question based on that information: '{questions}'
+        """
+
+        body = {
+            "input": prompt,
+            "parameters": {
+                "decoding_method": "greedy",
+                "max_new_tokens": 200,
+                "min_new_tokens": 0,
+                "repetition_penalty": 1
+            },
+            "model_id": "google/flan-ul2",
+            "project_id": "55f9d5d9-730c-4c8c-99ef-264b06c34dd1"
+        }
+
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + get_token_header()["Authorization"]
+        }
+
+        url = "https://jp-tok.ml.cloud.ibm.com/ml/v1/text/generation?version=2023-05-29"
+        response = requests.post(url, headers=headers, json=body)
+        
+        if response.status_code != 200:
+            raise Exception(f"Error fetching LLM response: {response.text}")
+
+        result = response.json()
+        return jsonify({'response': result['output'][0]['text']}), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/predict', methods=['POST'])
 def process_image():
