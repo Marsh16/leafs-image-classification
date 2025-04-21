@@ -1,5 +1,4 @@
 from flask import Flask, request, jsonify
-from flask_cors import CORS
 import numpy as np
 import requests
 import base64
@@ -8,7 +7,6 @@ import io
 
 # Initialize Flask app
 app = Flask(__name__)
-CORS(app)  # Enable CORS for cross-origin requests
 
 # IBM Watson ML credentials (you can load these from environment variables for security)
 API_KEY = "BP99mfadlrhSUdGGg73bsRKZf-nDHGWO1J7OMGbsCBsD"
