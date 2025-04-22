@@ -274,7 +274,7 @@ export default function Home() {
                   <div
                     className={`p-3 rounded-lg font-mono text-sm max-w-[85%] whitespace-pre-line ${
                       msg.role === "user"
-                        ? "ml-auto bg-purple-600 text-white"
+                        ? "ml-auto bg-purple-600 text-white text-end"
                         : "bg-zinc-100 dark:bg-zinc-700 text-black dark:text-white"
                     }`}
                   >
@@ -314,7 +314,7 @@ export default function Home() {
           ) : (
             <Card className="w-full max-w-3xl p-6 bg-white dark:bg-zinc-800 shadow-lg space-y-4">
               <div className="flex items-end gap-2">
-                <label className="cursor-pointer text-zinc-500 hover:text-purple-500">
+                <label className="cursor-pointer text-zinc-500 hover:text-purple-500 text-2xl">
                   📤
                   <input
                     type="file"
