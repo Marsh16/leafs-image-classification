@@ -186,7 +186,7 @@ export default function Home() {
   };
 
   return (
-    <main className="flex min-h-screen bg-gradient-to-br from-purple-600 to-blue-400 dark:from-purple-800 dark:to-blue-900">
+    <main className="flex min-h-screen bg-gradient-to-br from-cyan-600 to-blue-400 dark:from-cyan-800 dark:to-blue-900">
       {/* Sidebar */}
       <aside className="w-full md:w-1/4 bg-white dark:bg-zinc-900 p-4 overflow-y-auto border-r border-zinc-300 dark:border-zinc-700">
         <h2 className="text-lg font-bold mb-4 text-center text-black dark:text-white">
@@ -255,7 +255,7 @@ export default function Home() {
                 key={idx}
                 className={`p-3 rounded-lg font-mono text-sm max-w-[85%] whitespace-pre-line ${
                   msg.role === "user"
-                    ? "ml-auto bg-purple-600 text-white"
+                    ? "ml-auto bg-cyan-600 text-white"
                     : "bg-zinc-100 dark:bg-zinc-700 text-black dark:text-white"
                 }`}
               >
@@ -274,7 +274,7 @@ export default function Home() {
                   <div
                     className={`p-3 rounded-lg font-mono text-sm max-w-[85%] whitespace-pre-line ${
                       msg.role === "user"
-                        ? "ml-auto bg-purple-600 text-white text-end"
+                        ? "ml-auto bg-cyan-600 text-white text-end"
                         : "bg-zinc-100 dark:bg-zinc-700 text-black dark:text-white"
                     }`}
                   >
@@ -314,7 +314,7 @@ export default function Home() {
           ) : (
             <Card className="w-full max-w-3xl p-6 bg-white dark:bg-zinc-800 shadow-lg space-y-4">
               <div className="flex items-end gap-2">
-                <label className="cursor-pointer text-zinc-500 hover:text-purple-500 text-2xl">
+                <label className="cursor-pointer text-zinc-500 hover:text-cyan-500 text-2xl">
                   📤
                   <input
                     type="file"
@@ -335,7 +335,7 @@ export default function Home() {
 
                 <Button
                   onClick={handleLlmQuestion}
-                  className="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-4 py-2 rounded-lg"
+                  className="bg-cyan-600 hover:bg-cyan-700 text-white font-semibold px-4 py-2 rounded-lg"
                 >
                   Send
                 </Button>
