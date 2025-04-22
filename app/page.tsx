@@ -240,6 +240,13 @@ export default function Home() {
           </div>
         </div>
 
+        {messages.length == 0 && (
+          <div className="text-center mb-16 text-white">
+            <h2 className="text-2xl font-mono mb-2">Hello Farmer 👨‍🌾</h2>
+            <p className="text-xl font-mono">Drop a mango leaf for vibes 🍵</p>
+          </div>
+        )}
+
         <div className="flex flex-col items-center">
           {/* Chat UI */}
           <div className="w-full max-w-3xl py-6 space-y-3">
@@ -252,7 +259,8 @@ export default function Home() {
                     : "bg-zinc-100 dark:bg-zinc-700 text-black dark:text-white"
                 }`}
               >
-                { msg.content.startsWith("data:image/") && msg.content.includes("base64,") ? (
+                {msg.content.startsWith("data:image/") &&
+                msg.content.includes("base64,") ? (
                   <div className="mb-6 flex justify-center">
                     <Image
                       src={msg.content}
@@ -282,10 +290,10 @@ export default function Home() {
             )}
           </div>
 
-          <Card className="w-full max-w-3xl p-6 bg-white dark:bg-zinc-800 shadow-lg space-y-4">
-            <div className="flex items-end gap-2">
-              <label className="cursor-pointer text-zinc-500 hover:text-purple-500">
-                📤
+          {messages.length == 0 ? (
+            <Card className="w-full max-w-md p-4 flex items-center justify-between bg-white dark:bg-zinc-800">
+              <label className="text-zinc-500 dark:text-zinc-400 font-mono cursor-pointer flex-grow">
+                Upload that 🍃 pic
                 <input
                   type="file"
                   accept="image/*"
@@ -294,23 +302,46 @@ export default function Home() {
                   ref={fileInputRef}
                 />
               </label>
-
-              <textarea
-                placeholder="Ask a question about the disease..."
-                className="flex-grow resize-none rounded-lg p-3 text-sm bg-zinc-100 dark:bg-zinc-900 text-black dark:text-white border border-zinc-300 dark:border-zinc-700 font-mono"
-                rows={2}
-                value={question}
-                onChange={(e) => setQuestion(e.target.value)}
-              />
-
               <Button
-                onClick={handleLlmQuestion}
-                className="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-4 py-2 rounded-lg"
+                variant="outline"
+                size="icon"
+                className="rounded-full"
+                onClick={handleClick}
               >
-                Send
+                <span className="text-2xl">📤</span>
               </Button>
-            </div>
-          </Card>
+            </Card>
+          ) : (
+            <Card className="w-full max-w-3xl p-6 bg-white dark:bg-zinc-800 shadow-lg space-y-4">
+              <div className="flex items-end gap-2">
+                <label className="cursor-pointer text-zinc-500 hover:text-purple-500">
+                  📤
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageUpload}
+                    ref={fileInputRef}
+                  />
+                </label>
+
+                <textarea
+                  placeholder="Ask a question about the disease..."
+                  className="flex-grow resize-none rounded-lg p-3 text-sm bg-zinc-100 dark:bg-zinc-900 text-black dark:text-white border border-zinc-300 dark:border-zinc-700 font-mono"
+                  rows={2}
+                  value={question}
+                  onChange={(e) => setQuestion(e.target.value)}
+                />
+
+                <Button
+                  onClick={handleLlmQuestion}
+                  className="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-4 py-2 rounded-lg"
+                >
+                  Send
+                </Button>
+              </div>
+            </Card>
+          )}
 
           {/* Confetti */}
           {prediction?.toLowerCase().includes("healthy") &&
