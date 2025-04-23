@@ -109,7 +109,7 @@ def get_llm_response():
                 "min_new_tokens": 0,
                 "repetition_penalty": 1
             },
-            "model_id": "ibm/granite-3-8b-instruct",
+            "model_id": "meta-llama/llama-3-3-70b-instruct",
             "project_id": "55f9d5d9-730c-4c8c-99ef-264b06c34dd1"
         }
 
