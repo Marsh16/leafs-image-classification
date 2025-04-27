@@ -5,15 +5,15 @@ import requests
 import base64
 from PIL import Image
 import io
+import os
 
 # Initialize Flask app
 app = Flask(__name__)
 CORS(app)  # Enable CORS for cross-origin requests
 
-# IBM Watson ML credentials (you can load these from environment variables for security)
-API_KEY = "BP99mfadlrhSUdGGg73bsRKZf-nDHGWO1J7OMGbsCBsD"
-DEPLOYMENT_ID = "b7b56897-687b-41c3-aa44-f629813d2aa6"
-WATSON_URL = f"https://jp-tok.ml.cloud.ibm.com/ml/v4/deployments/{DEPLOYMENT_ID}/predictions?version=2021-05-01"
+API_KEY = os.getenv("API_KEY")
+DEPLOYMENT_ID = os.getenv("DEPLOYMENT_ID")
+WATSON_URL = os.getenv("WATSON_URL")
 
 # Class labels (edit as needed based on your model's output)
 CLASS_NAMES = ['Anthracnose', 'Bacterial Canker', 'Cutting Weevil', 'Die Back', 
