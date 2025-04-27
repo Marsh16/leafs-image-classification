@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
-from flask_cors import CORS
 import numpy as np
+from flask_cors import CORS
 import requests
 import base64
 from PIL import Image
@@ -28,7 +28,7 @@ def get_token_header():
         )
         token_response.raise_for_status()
         mltoken = token_response.json()["access_token"]
-        return {'Content-Type': 'application/json', 'Authorization': f'Bearer {mltoken}'}
+        return {"Accept": "application/json",'Content-Type': 'application/json', 'Authorization': f'Bearer {mltoken}'}
     except Exception as e:
         raise Exception(f"Failed to get token: {e}")
 
@@ -70,10 +70,65 @@ def predict_image(encoded_string):
         return predicted_class, confidence
     except Exception as e:
         return None, str(e)
+    
+@app.route('/api/questions', methods=['POST'])
+def get_llm_response():
+    try:
+        data = request.get_json()
+        
+        if not data or 'disease_name' not in data or 'questions' not in data:
+            return jsonify({'error': 'Missing required data: disease_name or questions'}), 400
 
-@app.route('/api/python', methods=['GET'])
-def hello():
-    return "Hello from Flask server!"
+        disease_name = data.get('disease_name')
+        questions = data.get('questions')
+
+        prompt = f"""
+        You are a friendly and knowledgeable plant doctor helping a mango farmer.
+
+        The mango leaf has been diagnosed with: **'{disease_name}'**.
+
+        Start by providing a detailed explanation to help the farmer understand the situation:
+        1. What is this disease? Explain it in simple terms.
+        2. What are the common symptoms to look out for?
+        3. What treatments can help, especially organic or easily accessible ones?
+        4. What are one or two effective prevention tips?
+
+        Now, the farmer has a specific question: **'{questions}'**
+
+        If the question relates to the disease, answer it in depth using the information above. If it's a bit different, do your best to provide a helpful and informative response based on your plant health knowledge.
+
+        Keep your tone warm and farmer-friendly. Use bullet points or short paragraphs if it helps clarity.
+        """
+
+        body = {
+            "input": prompt,
+            "parameters": {
+                "decoding_method": "greedy",
+                "max_new_tokens": 200,
+                "min_new_tokens": 0,
+                "repetition_penalty": 1
+            },
+            "model_id": "google/flan-ul2",
+            "project_id": "55f9d5d9-730c-4c8c-99ef-264b06c34dd1"
+        }
+
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Authorization": get_token_header()["Authorization"]
+        }
+
+        url = "https://jp-tok.ml.cloud.ibm.com/ml/v1/text/generation?version=2023-05-29"
+        response = requests.post(url, headers=headers, json=body)
+        
+        if response.status_code != 200:
+            raise Exception(f"Error fetching LLM response: {response.text}")
+
+        result = response.json()
+        return jsonify({'response': result['results'][0]['generated_text']}), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/predict', methods=['POST'])
 def process_image():
