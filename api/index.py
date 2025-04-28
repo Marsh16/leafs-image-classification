@@ -12,7 +12,6 @@ app = Flask(__name__)
 CORS(app)  # Enable CORS for cross-origin requests
 
 API_KEY = os.getenv("API_KEY")
-DEPLOYMENT_ID = os.getenv("DEPLOYMENT_ID")
 WATSON_URL = os.getenv("WATSON_URL")
 
 # Class labels (edit as needed based on your model's output)
