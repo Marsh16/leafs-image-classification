@@ -145,7 +145,7 @@ export default function Home() {
 
     try {
       const response = await fetch(
-        "https://leafs-ai.vercel.app/api/questions",
+        "/api",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
