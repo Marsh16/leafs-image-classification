@@ -1,98 +1,86 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import Image from "next/image";
+import { useState, useEffect } from "react";
 import { Clock } from "lucide-react";
-import { ModeToggle } from "@/components/mode-toggle";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/Card";
-import { Footer } from "@/components/Footer";
 import Confetti from "react-confetti";
-import useWindowSize from "./useWindowSize";
+import { LeafHistoryItem, PredictionResult } from "./types";
+import { formatDateTime } from "./lib/dateUtils";
+import { Message } from "ai";
+import useWindowSize from "./hooks/useWindowSize";
+import { PastLeafCard } from "./components/PastLeafCard";
+import { ModeToggle } from "./components/mode-toggle";
+import { ChatMessage } from "./components/ChatMessage";
+import { UploadInterface } from "./components/UploadInterface";
+import { ChatInterface } from "./components/ChatInterface";
+import { Footer } from "./components/Footer";
+import { nanoid } from "nanoid"; // you may need to install this if you haven’t
 
 export default function Home() {
-  const [mounted, setMounted] = useState(false);
+  // State management
+  const [mounted, setMounted] = useState<boolean>(false);
   const [currentImage, setCurrentImage] = useState<string | null>(null);
   const [prediction, setPrediction] = useState<string | null>(null);
   const [confidence, setConfidence] = useState<number | null>(null);
-  const [history, setHistory] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [history, setHistory] = useState<LeafHistoryItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
   const [currentDateTime, setCurrentDateTime] = useState<string>(
     formatDateTime(new Date())
   );
   const [question, setQuestion] = useState<string>("");
-  const [messages, setMessages] = useState<{ role: string; content: string }[]>(
-    []
-  );
+  const [messages, setMessages] = useState<Message[]>([]);
 
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const { width, height } = useWindowSize();
 
+  // Initialize component
   useEffect(() => {
+    // Update time every second
     const timer = setInterval(() => {
       setCurrentDateTime(formatDateTime(new Date()));
     }, 1000);
-    return () => clearInterval(timer);
-  }, []);
 
-  useEffect(() => {
+    // Load prediction history from session storage
     const stored = sessionStorage.getItem("predictionHistory");
     if (stored) {
       setHistory(JSON.parse(stored));
     }
-  }, []);
 
-  useEffect(() => {
+    // Set mounted state to allow rendering
     setMounted(true);
+
+    return () => clearInterval(timer);
   }, []);
 
-  if (!mounted) return null; // prevent SSR rendering
+  if (!mounted) return null; // Prevent SSR rendering
 
-  function formatDateTime(date: Date): string {
-    const options: Intl.DateTimeFormatOptions = {
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    };
-    const formattedDate = date.toLocaleDateString("en-US", options);
-    const formattedTime = date.toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: false,
-    });
-    return `${formattedDate} • ${formattedTime}`;
-  }
-
-  const handleClick = () => {
-    fileInputRef.current?.click();
-  };
-
+  // Handle image upload and prediction
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       const reader = new FileReader();
 
-      reader.onload = async (event) => {
+      reader.onload = async (event: ProgressEvent<FileReader>) => {
         if (event.target?.result) {
-          const base64String = (event.target.result as string).split(",")[1];
-          const imageSrc = event.target.result as string;
+          const result = event.target.result as string;
+          const base64String = result.split(",")[1];
+          const imageSrc = result;
 
           setCurrentImage(imageSrc);
           setPrediction(null);
           setConfidence(null);
           setLoading(true);
 
+          // Add image to messages
           setMessages((prev) => [
             ...prev,
-            { role: "user", content: `${imageSrc}` },
+            { id: nanoid(), role: "user", content: `${imageSrc}` },
           ]);
 
           try {
+            // Send prediction request
             const response = await fetch(
-              process.env.NEXT_PUBLIC_ENV === 'development' 
-              ? "/api/predict" 
-              : "/api/predict",
+              process.env.NEXT_PUBLIC_ENV === "development"
+                ? "/api/predict"
+                : "/api/predict",
               {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -100,19 +88,22 @@ export default function Home() {
               }
             );
 
-            const result = await response.json();
+            const result = (await response.json()) as PredictionResult;
 
             if (response.ok) {
-              const entry = {
+              // Create new history entry
+              const entry: LeafHistoryItem = {
                 image: imageSrc,
                 class: result.class,
                 confidence: result.confidence,
                 timestamp: new Date().toISOString(),
               };
 
+              // Update state with prediction results
               setPrediction(entry.class);
               setConfidence(entry.confidence);
 
+              // Update history
               const updatedHistory = [entry, ...history];
               setHistory(updatedHistory);
               sessionStorage.setItem(
@@ -120,15 +111,17 @@ export default function Home() {
                 JSON.stringify(updatedHistory)
               );
 
+              // Add assistant response
               setMessages((prev) => [
                 ...prev,
                 {
+                  id: nanoid(),
                   role: "assistant",
                   content: `This leaf is likely ${result.class} with ${result.confidence}% confidence.`,
                 },
               ]);
             } else {
-              console.error("Prediction error:", result.error);
+              console.error("Prediction error:", result);
             }
           } catch (error) {
             console.error("Error uploading image:", error);
@@ -142,40 +135,45 @@ export default function Home() {
     }
   };
 
+  // Handle LLM question
   const handleLlmQuestion = async () => {
     if (!question) {
       alert("Please provide a question.");
       return;
     }
 
-    setMessages((prev) => [...prev, { role: "user", content: question }]);
+    // Add user question to messages
+    setMessages((prev) => [
+      ...prev,
+      { id: nanoid(), role: "user", content: question },
+    ]);
     setQuestion("");
     setLoading(true);
 
     try {
-      const response = await fetch(
-        "/api/questions",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            disease_name: prediction,
-            questions: question,
-          }),
-        }
-      );
+      // Send question to API
+      const response = await fetch("/api/questions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          disease_name: prediction,
+          questions: question,
+        }),
+      });
 
       const result = await response.json();
 
+      // Add response to messages
       if (response.ok) {
         setMessages((prev) => [
           ...prev,
-          { role: "assistant", content: result.response },
+          { id: nanoid(), role: "assistant", content: result.response },
         ]);
       } else {
         setMessages((prev) => [
           ...prev,
           {
+            id: nanoid(),
             role: "assistant",
             content: "Sorry, I couldn't fetch a response at the moment.",
           },
@@ -185,6 +183,7 @@ export default function Home() {
       setMessages((prev) => [
         ...prev,
         {
+          id: nanoid(),
           role: "assistant",
           content: "Sorry, something went wrong.",
         },
@@ -194,40 +193,27 @@ export default function Home() {
     }
   };
 
+  // Determine if confetti should be shown
+  const showConfetti =
+    prediction?.toLowerCase().includes("healthy") &&
+    confidence &&
+    confidence > 75;
+
   return (
     <main className="flex min-h-screen bg-gradient-to-br from-cyan-600 to-blue-400 dark:from-cyan-800 dark:to-blue-900">
-      {/* Sidebar */}
+      {/* Sidebar with history */}
       <aside className="w-full md:w-1/4 bg-white dark:bg-zinc-900 p-4 overflow-y-auto border-r border-zinc-300 dark:border-zinc-700">
         <h2 className="text-lg font-bold mb-4 text-center text-black dark:text-white">
           🔮 Past Leafs
         </h2>
+
         <div className="space-y-4">
           {history.map((item, index) => (
-            <Card
-              key={index}
-              className="p-3 bg-zinc-100 dark:bg-zinc-800 shadow-md hover:shadow-xl transition duration-300"
-            >
-              <div className="flex gap-2 items-center">
-                <Image
-                  src={item.image}
-                  alt={`Leaf ${index}`}
-                  width={60}
-                  height={45}
-                  className="rounded-lg"
-                />
-                <div>
-                  <p className="text-sm font-mono text-blue-600 dark:text-blue-400">
-                    <strong>{item.class}</strong>
-                  </p>
-                  <p className="text-xs text-zinc-600 dark:text-zinc-400">
-                    {item.confidence}% •{" "}
-                    {new Date(item.timestamp).toLocaleTimeString()}
-                  </p>
-                </div>
-              </div>
-            </Card>
+            <PastLeafCard key={index} item={item} index={index} />
           ))}
         </div>
+
+        {/* Current date and time display */}
         <div className="fixed bottom-5 left-5 z-50">
           <div className="bg-white dark:bg-zinc-800 rounded-full px-4 py-2 shadow-md flex items-center">
             <Clock className="w-4 h-4 mr-2 text-zinc-500 dark:text-zinc-400" />
@@ -238,18 +224,20 @@ export default function Home() {
         </div>
       </aside>
 
+      {/* Main content */}
       <section className="flex-1 p-6">
+        {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div className="flex items-center gap-2">
             <h1 className="text-3xl font-bold text-white">Leafs.ai 🍃✨</h1>
           </div>
-
           <div className="flex items-center">
             <ModeToggle />
           </div>
         </div>
 
-        {messages.length == 0 && (
+        {/* Welcome message */}
+        {messages.length === 0 && (
           <div className="text-center mb-16 text-white">
             <h2 className="text-2xl font-mono mb-2">Hello Farmer 👨‍🌾</h2>
             <p className="text-xl font-mono">Drop a mango leaf for vibes 🍵</p>
@@ -257,41 +245,13 @@ export default function Home() {
         )}
 
         <div className="flex flex-col items-center">
-          {/* Chat UI */}
+          {/* Chat messages display */}
           <div className="w-full max-w-3xl py-6 space-y-3">
             {messages.map((msg, idx) => (
-              <div
-                key={idx}
-                className={`p-3 rounded-lg font-mono text-sm max-w-[85%] whitespace-pre-line ${
-                  msg.role === "user"
-                    ? "ml-auto bg-cyan-600 text-white"
-                    : "bg-zinc-100 dark:bg-zinc-700 text-black dark:text-white"
-                }`}
-              >
-                {msg.content.startsWith("data:image/") &&
-                msg.content.includes("base64,") ? (
-                  <div className="mb-6 flex justify-center">
-                    <Image
-                      src={msg.content}
-                      alt="Uploaded Leaf"
-                      width={300}
-                      height={300}
-                      className="rounded-lg shadow-lg border border-zinc-300 dark:border-zinc-700"
-                    />
-                  </div>
-                ) : (
-                  <div
-                    className={`p-3 rounded-lg font-mono text-sm max-w-[85%] whitespace-pre-line ${
-                      msg.role === "user"
-                        ? "ml-auto bg-cyan-600 text-white text-end"
-                        : "bg-zinc-100 dark:bg-zinc-700 text-black dark:text-white"
-                    }`}
-                  >
-                    {msg.content}
-                  </div>
-                )}
-              </div>
+              <ChatMessage key={idx} message={msg} />
             ))}
+
+            {/* Loading indicator */}
             {loading && (
               <div className="text-sm text-zinc-500 animate-pulse font-mono">
                 Thinking...
@@ -299,71 +259,28 @@ export default function Home() {
             )}
           </div>
 
-          {messages.length == 0 ? (
-            <Card className="w-full max-w-md p-4 flex items-center justify-between bg-white dark:bg-zinc-800">
-              <label className="text-zinc-500 dark:text-zinc-400 font-mono cursor-pointer flex-grow">
-                Upload that 🍃 pic
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleImageUpload}
-                  ref={fileInputRef}
-                />
-              </label>
-              <Button
-                variant="outline"
-                size="icon"
-                className="rounded-full"
-                onClick={handleClick}
-              >
-                <span className="text-2xl">📤</span>
-              </Button>
-            </Card>
+          {/* Input interface */}
+          {messages.length === 0 ? (
+            <UploadInterface onUpload={handleImageUpload} />
           ) : (
-            <Card className="w-full max-w-3xl p-6 bg-white dark:bg-zinc-800 shadow-lg space-y-4">
-              <div className="flex items-end gap-2">
-                <label className="cursor-pointer text-zinc-500 hover:text-cyan-500 text-2xl">
-                  📤
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleImageUpload}
-                    ref={fileInputRef}
-                  />
-                </label>
-
-                <textarea
-                  placeholder="Ask a question about the disease..."
-                  className="flex-grow resize-none rounded-lg p-3 text-sm bg-zinc-100 dark:bg-zinc-900 text-black dark:text-white border border-zinc-300 dark:border-zinc-700 font-mono"
-                  rows={2}
-                  value={question}
-                  onChange={(e) => setQuestion(e.target.value)}
-                />
-
-                <Button
-                  onClick={handleLlmQuestion}
-                  className="bg-cyan-600 hover:bg-cyan-700 text-white font-semibold px-4 py-2 rounded-lg"
-                >
-                  Send
-                </Button>
-              </div>
-            </Card>
+            <ChatInterface
+              question={question}
+              setQuestion={setQuestion}
+              onSend={handleLlmQuestion}
+              onUpload={handleImageUpload}
+            />
           )}
 
-          {/* Confetti */}
-          {prediction?.toLowerCase().includes("healthy") &&
-            confidence &&
-            confidence > 75 && (
-              <Confetti
-                width={width}
-                height={height}
-                numberOfPieces={250}
-                recycle={false}
-                colors={["#00F2B4", "#FF77FF", "#6B5B95", "#5DD6F5"]}
-              />
-            )}
+          {/* Confetti effect for healthy leaves */}
+          {showConfetti && (
+            <Confetti
+              width={width}
+              height={height}
+              numberOfPieces={250}
+              recycle={false}
+              colors={["#00F2B4", "#FF77FF", "#6B5B95", "#5DD6F5"]}
+            />
+          )}
         </div>
 
         <Footer />
