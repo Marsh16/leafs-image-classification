@@ -1,6 +1,5 @@
-// app/page.tsx
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import HistorySidebar from "./components/Sidebar/HistorySidebar";
 import UploadCard from "./components/Upload/UploadCard";
 import ChatWindow from "./components/Chat/ChatWindow";
@@ -10,11 +9,19 @@ import { PredictionHistoryItem, Message } from "./types";
 
 export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [history, setHistory] = useState<PredictionHistoryItem[]>(() => {
-    const stored = sessionStorage.getItem("predictionHistory");
-    return stored ? JSON.parse(stored) : [];
-  });
+  const [history, setHistory] = useState<PredictionHistoryItem[]>([]);
   const [currentDateTime, setCurrentDateTime] = useState<string>("");
+
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem("predictionHistory");
+      if (stored) {
+        setHistory(JSON.parse(stored));
+      }
+    } catch (e) {
+      console.error("Failed to load prediction history:", e);
+    }
+  }, []);
 
   useEffect(() => {
     const updateDateTime = () => setCurrentDateTime(formatDateTime(new Date()));
@@ -33,10 +40,7 @@ export default function Home() {
     const updatedHistory = [prediction, ...history].slice(0, MAX_HISTORY_ITEMS);
     setHistory(updatedHistory);
     try {
-      sessionStorage.setItem(
-        "predictionHistory",
-        JSON.stringify(updatedHistory)
-      );
+      sessionStorage.setItem("predictionHistory", JSON.stringify(updatedHistory));
     } catch (e) {
       console.error("Failed to save prediction history:", e);
     }
