@@ -11,6 +11,7 @@ import Confetti from "react-confetti";
 import useWindowSize from "./useWindowSize";
 
 export default function Home() {
+  const [mounted, setMounted] = useState(false);
   const [currentImage, setCurrentImage] = useState<string | null>(null);
   const [prediction, setPrediction] = useState<string | null>(null);
   const [confidence, setConfidence] = useState<number | null>(null);
@@ -40,6 +41,12 @@ export default function Home() {
       setHistory(JSON.parse(stored));
     }
   }, []);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return null; // prevent SSR rendering
 
   function formatDateTime(date: Date): string {
     const options: Intl.DateTimeFormatOptions = {
@@ -83,7 +90,9 @@ export default function Home() {
 
           try {
             const response = await fetch(
-              "https://leafs-ai.vercel.app/api/predict",
+              process.env.NEXT_PUBLIC_ENV === 'development' 
+              ? "/api/predict" 
+              : "/api/predict",
               {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -145,7 +154,7 @@ export default function Home() {
 
     try {
       const response = await fetch(
-        "/api",
+        "/api/questions",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
