@@ -59,13 +59,13 @@ Keep your tone warm, supportive, and easy to understand. Use bullet points or sh
       bearerToken,
     });
 
-    const {text} = await generateText({
-      model: watsonxInstance('ibm/granite-3-8b-instruct'),
+    const { text } = await generateText({
+      model: watsonxInstance("ibm/granite-3-8b-instruct"),
       messages: [
-          {role: 'system', content: prompt},
-          {role: 'user', content: questions},
+        { role: "system", content: prompt },
+        { role: "user", content: questions },
       ],
-  });
+    });
 
     return new Response(JSON.stringify({ response: text }), {
       status: 200,
