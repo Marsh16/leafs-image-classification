@@ -106,11 +106,24 @@ export default function Home() {
               // Update history
               const updatedHistory = [entry, ...history];
               setHistory(updatedHistory);
-              sessionStorage.setItem(
-                "predictionHistory",
-                JSON.stringify(updatedHistory)
-              );
-
+              
+              try {
+                sessionStorage.setItem(
+                  "predictionHistory",
+                  JSON.stringify(updatedHistory)
+                );
+              } catch (e) {
+                if (
+                  e instanceof DOMException &&
+                  (e.name === "QuotaExceededError" ||
+                    e.name === "NS_ERROR_DOM_QUOTA_REACHED")
+                ) {
+                  console.warn("Session storage full. Clearing history.");
+                  sessionStorage.removeItem("predictionHistory");
+                } else {
+                  console.error("Failed to write to sessionStorage", e);
+                }
+              }
               // Add assistant response
               setMessages((prev) => [
                 ...prev,

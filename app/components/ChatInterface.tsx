@@ -11,14 +11,21 @@ interface ChatInterfaceProps {
   onUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
-export const ChatInterface = ({ 
-  question, 
-  setQuestion, 
-  onSend, 
-  onUpload 
+export const ChatInterface = ({
+  question,
+  setQuestion,
+  onSend,
+  onUpload,
 }: ChatInterfaceProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      onSend();
+    }
+  };
+
   return (
     <Card className="w-full max-w-3xl p-6 bg-white dark:bg-zinc-800 shadow-lg space-y-4">
       <div className="flex items-end gap-2">
@@ -39,6 +46,7 @@ export const ChatInterface = ({
           rows={2}
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
+          onKeyDown={handleKeyDown}
         />
 
         <Button
