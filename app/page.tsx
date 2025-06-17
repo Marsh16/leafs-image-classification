@@ -150,8 +150,9 @@ export default function Home() {
     setQuestion("");
     setLoading(true);
 
+    // in handleLlmQuestion()
+
     try {
-      // Send question to API
       const response = await fetch("/api/questions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -161,31 +162,38 @@ export default function Home() {
         }),
       });
 
-      const result = await response.json();
+      if (!response.ok || !response.body) throw new Error("Streaming failed");
 
-      // Add response to messages
-      if (response.ok) {
-        setMessages((prev) => [
-          ...prev,
-          { id: nanoid(), role: "assistant", content: result.response },
-        ]);
-      } else {
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: nanoid(),
-            role: "assistant",
-            content: "Sorry, I couldn't fetch a response at the moment.",
-          },
-        ]);
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+
+      let fullText = "";
+      const newMessageId = nanoid();
+      setMessages((prev) => [
+        ...prev,
+        { id: newMessageId, role: "assistant", content: "" },
+      ]);
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        fullText += chunk;
+
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === newMessageId ? { ...msg, content: fullText } : msg
+          )
+        );
       }
     } catch (error) {
+      console.error("Streaming failed:", error);
       setMessages((prev) => [
         ...prev,
         {
           id: nanoid(),
           role: "assistant",
-          content: "Sorry, something went wrong.",
+          content: "Sorry, something went wrong while streaming.",
         },
       ]);
     } finally {

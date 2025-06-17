@@ -1,6 +1,6 @@
 // app/api/questions/route.ts (Next.js API route in /app folder)
 import { createWatsonx } from "@rama-adi/watsonx-unofficial-ai-provider";
-import { generateText } from "ai";
+import { streamText } from "ai";
 
 const API_KEY = process.env.API_KEY;
 const PROJECT_ID = "55f9d5d9-730c-4c8c-99ef-264b06c34dd1";
@@ -59,7 +59,7 @@ Keep your tone warm, supportive, and easy to understand. Use bullet points or sh
       bearerToken,
     });
 
-    const { text } = await generateText({
+    const stream = await streamText({
       model: watsonxInstance("ibm/granite-3-8b-instruct"),
       messages: [
         { role: "system", content: prompt },
@@ -67,9 +67,11 @@ Keep your tone warm, supportive, and easy to understand. Use bullet points or sh
       ],
     });
 
-    return new Response(JSON.stringify({ response: text }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
+    return new Response(stream.textStream, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Transfer-Encoding": "chunked",
+      },
     });
   } catch (error) {
     console.error("Error generating response:", error);
