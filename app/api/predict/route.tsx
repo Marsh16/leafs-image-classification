@@ -35,8 +35,7 @@ async function preprocessBase64Image(base64: string): Promise<number[][][][]> {
   const Jimp = (await import("jimp")).default;
 
   const buffer = Buffer.from(base64, "base64");
-  const image = await Jimp.read(buffer); 
-
+  const image = await Jimp.read(buffer);
   image.resize(227, 227);
 
   const { data, width, height } = image.bitmap;
@@ -57,21 +56,17 @@ async function preprocessBase64Image(base64: string): Promise<number[][][][]> {
   return [imageArray]; // shape: [1, height, width, 3]
 }
 
-export async function POST(req: NextRequest) {
-  try {
-    const { data: base64Image } = await req.json();
+function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
-    if (!base64Image) {
-      return new Response(JSON.stringify({ error: "No image data provided" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
-    const inputData = await preprocessBase64Image(base64Image);
-
-    const bearerToken = await getBearerToken();
-
+async function tryWatsonInference(
+  bearerToken: string,
+  inputData: number[][][][],
+  retries = 3,
+  waitMs = 3000
+): Promise<Response> {
+  for (let attempt = 1; attempt <= retries; attempt++) {
     const response = await fetch(WATSON_URL, {
       method: "POST",
       headers: {
@@ -88,13 +83,37 @@ export async function POST(req: NextRequest) {
       }),
     });
 
-    if (!response.ok) {
+    if (response.ok) {
+      return response;
+    } else if (attempt < retries) {
+      console.warn(`Inference failed (attempt ${attempt}), retrying after ${waitMs}ms...`);
+      await delay(waitMs);
+    } else {
       const errorText = await response.text();
-      throw new Error(`Watson ML error: ${errorText}`);
+      throw new Error(`Watson ML error after ${retries} attempts: ${errorText}`);
+    }
+  }
+  throw new Error("Inference failed unexpectedly.");
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const { data: base64Image } = await req.json();
+
+    if (!base64Image) {
+      return new Response(JSON.stringify({ error: "No image data provided" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
+    const inputData = await preprocessBase64Image(base64Image);
+    const bearerToken = await getBearerToken();
+
+    const response = await tryWatsonInference(bearerToken, inputData);
     const result = await response.json();
     const predictions = result.predictions[0].values[0];
+
     const maxIndex = predictions.indexOf(Math.max(...predictions));
     const predictedClass = CLASS_NAMES[maxIndex];
     const confidence = +(predictions[maxIndex] * 100).toFixed(2);
