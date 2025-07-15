@@ -63,7 +63,7 @@ function delay(ms: number) {
 async function tryWatsonInference(
   bearerToken: string,
   inputData: number[][][][],
-  retries = 3,
+  retries = 5,
   waitMs = 3000
 ): Promise<Response> {
   for (let attempt = 1; attempt <= retries; attempt++) {
