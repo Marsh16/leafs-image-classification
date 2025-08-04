@@ -16,7 +16,7 @@ export const UploadInterface = ({ onUpload }: UploadInterfaceProps) => {
   };
 
   return (
-    <div className="w-full max-w-lg">
+    <div className="w-full max-w-lg mx-auto">
       <div
         onClick={handleClick}
         className="glass-subtle rounded-2xl p-8 border-2 border-dashed border-slate-300 dark:border-slate-600 cursor-pointer transition-all duration-300 hover:border-emerald-400 dark:hover:border-emerald-500 hover:scale-105 group"
