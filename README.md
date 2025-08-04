@@ -1,78 +1,285 @@
+# 🍃 Leafs.ai - AI-Powered Plant Disease Detection
+
 <p align="center">
-  <a href="https://nextjs-flask-starter.vercel.app/">
-    <img src="https://assets.vercel.com/image/upload/v1588805858/repositories/vercel/logo.png" height="96">
-    <h3 align="center">Next.js Flask Starter</h3>
-  </a>
+  <img src="https://img.shields.io/badge/Next.js-15.3.2-black?style=for-the-badge&logo=next.js" alt="Next.js">
+  <img src="https://img.shields.io/badge/TypeScript-5.0.4-blue?style=for-the-badge&logo=typescript" alt="TypeScript">
+  <img src="https://img.shields.io/badge/TailwindCSS-3.3.2-38B2AC?style=for-the-badge&logo=tailwind-css" alt="TailwindCSS">
+  <img src="https://img.shields.io/badge/Watson_ML-IBM-052FAD?style=for-the-badge&logo=ibm" alt="Watson ML">
 </p>
 
-<p align="center">Simple Next.js boilerplate that uses <a href="https://flask.palletsprojects.com/">Flask</a> as the API backend.</p>
+<p align="center">
+  <strong>Modern AI-powered plant disease detection system with glassmorphism design</strong>
+</p>
 
-<br/>
+<p align="center">
+  Upload mango leaf images to instantly detect diseases and get expert agricultural advice powered by IBM Watson ML and AI.
+</p>
 
-## Introduction
+---
 
-This is a hybrid Next.js + Python app that uses Next.js as the frontend and Flask as the API backend. One great use case of this is to write Next.js apps that use Python AI libraries on the backend.
+## ✨ Features
 
-## How It Works
+### 🔬 **AI Disease Detection**
+- **8 Disease Classes**: Anthracnose, Bacterial Canker, Cutting Weevil, Die Back, Gall Midge, Healthy, Powdery Mildew, Sooty Mould
+- **High Accuracy**: Advanced machine learning model with confidence scoring
+- **Instant Results**: Real-time image processing and classification
+- **Expert Insights**: Detailed disease information and treatment recommendations
 
-The Python/Flask server is mapped into to Next.js app under `/api/`.
+### 🎨 **Modern Glassmorphism Design**
+- **Glassmorphism UI**: Translucent surfaces with backdrop blur effects
+- **Bento Layout**: Modular grid-based design inspired by Japanese aesthetics
+- **Responsive Design**: Perfect experience across all devices
+- **Dark/Light Mode**: Seamless theme switching with optimized contrast
 
-This is implemented using [`next.config.js` rewrites](https://github.com/vercel/examples/blob/main/python/nextjs-flask/next.config.js) to map any request to `/api/:path*` to the Flask API, which is hosted in the `/api` folder.
+### 🚀 **Advanced User Experience**
+- **Model Reloading Detection**: Smart handling of cloud model warm-up with real-time feedback
+- **Streaming Updates**: Live progress updates during prediction processing
+- **Interactive Upload**: Drag-and-drop interface with visual feedback
+- **Chat Interface**: Conversational AI for follow-up questions about diseases
 
-On localhost, the rewrite will be made to the `127.0.0.1:5328` port, which is where the Flask server is running.
+### 📊 **Smart Features**
+- **Prediction History**: Track all your leaf scans with timestamps
+- **Quick Stats**: View scanning metrics and health insights
+- **Session Storage**: Persistent history across browser sessions
+- **Confetti Celebrations**: Fun animations for healthy leaf detections
 
-In production, the Flask server is hosted as [Python serverless functions](https://vercel.com/docs/concepts/functions/serverless-functions/runtimes/python) on Vercel.
+---
 
-## Demo
+## 🛠️ Technology Stack
 
-https://nextjs-flask-starter.vercel.app/
+### **Frontend**
+- **Next.js 15.3.2** - React framework with App Router
+- **TypeScript** - Type-safe development
+- **TailwindCSS** - Utility-first CSS framework
+- **Lucide React** - Beautiful icon library
+- **React Confetti** - Celebration animations
 
-## Deploy Your Own
+### **Backend & AI**
+- **IBM Watson ML** - Machine learning model hosting
+- **Watson AI** - Conversational AI for expert advice
+- **Jimp** - Image processing and preprocessing
+- **Next.js API Routes** - Serverless API endpoints
 
-You can clone & deploy it to Vercel with one click:
+### **Design System**
+- **Glassmorphism** - Modern translucent design aesthetic
+- **Custom CSS Properties** - Dynamic theming system
+- **Responsive Grid** - Mobile-first bento layout
+- **Smooth Animations** - Hardware-accelerated transitions
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?demo-title=Next.js%20Flask%20Starter&demo-description=Simple%20Next.js%20boilerplate%20that%20uses%20Flask%20as%20the%20API%20backend.&demo-url=https%3A%2F%2Fnextjs-flask-starter.vercel.app%2F&demo-image=%2F%2Fimages.ctfassets.net%2Fe5382hct74si%2F795TzKM3irWu6KBCUPpPz%2F44e0c6622097b1eea9b48f732bf75d08%2FCleanShot_2023-05-23_at_12.02.15.png&project-name=Next.js%20Flask%20Starter&repository-name=nextjs-flask-starter&repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fexamples%2Ftree%2Fmain%2Fpython%2Fnextjs-flask&from=vercel-examples-repo)
+---
 
-## Developing Locally
+## 🚀 Getting Started
 
-You can clone & create this repo with the following command
+### Prerequisites
+- **Node.js 18+**
+- **npm/yarn/pnpm**
+- **IBM Cloud Account** (for Watson ML API)
 
-```bash
-npx create-next-app nextjs-flask --example "https://github.com/vercel/examples/tree/main/python/nextjs-flask"
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/Marsh16/leafs-image-classification.git
+   cd leafs-image-classification
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   # or
+   yarn install
+   # or
+   pnpm install
+   ```
+
+3. **Environment Setup**
+   Create a `.env.local` file in the root directory:
+   ```env
+   # IBM Watson ML Configuration
+   API_KEY=your_ibm_watson_api_key
+   WATSON_URL=your_watson_ml_deployment_url
+
+   # Environment
+   NEXT_PUBLIC_ENV=development
+   ```
+
+4. **Run the development server**
+   ```bash
+   npm run dev
+   # or
+   yarn dev
+   # or
+   pnpm dev
+   ```
+
+5. **Open your browser**
+   Navigate to [http://localhost:3000](http://localhost:3000)
+
+---
+
+## 📁 Project Structure
+
+```
+leafs-image-classification/
+├── app/
+│   ├── api/
+│   │   ├── predict/          # Image classification endpoint
+│   │   └── questions/        # AI chat endpoint
+│   ├── components/
+│   │   ├── ui/              # Reusable UI components
+│   │   ├── ChatInterface.tsx
+│   │   ├── ChatMessage.tsx
+│   │   ├── ModelLoadingIndicator.tsx
+│   │   ├── PastLeafCard.tsx
+│   │   └── UploadInterface.tsx
+│   ├── lib/                 # Utility functions
+│   ├── types/               # TypeScript type definitions
+│   ├── globals.css          # Global styles with glassmorphism
+│   ├── layout.tsx           # Root layout component
+│   └── page.tsx             # Main application page
+├── public/                  # Static assets
+├── docs/
+│   ├── GLASSMORPHISM_DESIGN.md
+│   └── MODEL_RELOADING_FEATURES.md
+└── README.md
 ```
 
-## Getting Started
+---
 
-First, install the dependencies:
+## 🎯 Usage Guide
 
-```bash
-npm install
-# or
-yarn
-# or
-pnpm install
+### **1. Upload Leaf Image**
+- Click the upload area or drag & drop a mango leaf image
+- Supported formats: JPG, PNG, WEBP (max 10MB)
+- The image will be automatically processed and resized
+
+### **2. View Results**
+- Get instant disease classification with confidence percentage
+- View detailed information about detected conditions
+- See treatment recommendations and expert advice
+
+### **3. Ask Questions**
+- Use the chat interface to ask follow-up questions
+- Get personalized advice based on your specific case
+- Learn about prevention and treatment methods
+
+### **4. Track History**
+- View all your previous scans in the sidebar
+- Monitor plant health trends over time
+- Access quick statistics about your scanning activity
+
+---
+
+## 🔧 Configuration
+
+### **Watson ML Setup**
+1. Create an IBM Cloud account
+2. Set up a Watson Machine Learning service
+3. Deploy your trained model
+4. Get your API key and deployment URL
+5. Add credentials to `.env.local`
+
+### **Model Requirements**
+- Input: 227x227 RGB images
+- Output: 8-class probability distribution
+- Format: TensorFlow/Keras model compatible with Watson ML
+
+### **Environment Variables**
+```env
+# Required
+API_KEY=your_ibm_watson_api_key
+WATSON_URL=your_watson_ml_deployment_url
+
+# Optional
+NEXT_PUBLIC_ENV=development|production
 ```
 
-Then, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
+## 🎨 Design System
+
+### **Glassmorphism Classes**
+```css
+.glass          /* Standard glassmorphism effect */
+.glass-strong   /* Enhanced glass with more blur */
+.glass-subtle   /* Light glass effect */
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### **Bento Grid System**
+```css
+.bento-grid     /* Grid container */
+.bento-item     /* Individual grid items */
+```
 
-The Flask server will be running on [http://127.0.0.1:5328](http://127.0.0.1:5328) – feel free to change the port in `package.json` (you'll also need to update it in `next.config.js`).
+### **Color Palette**
+- **Primary**: Emerald (400-600) and Cyan (400-600)
+- **Neutral**: Slate tones (50-900)
+- **Background**: Dynamic gradient mesh
+- **Glass**: Translucent with backdrop blur
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## 🚀 Deployment
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-- [Flask Documentation](https://flask.palletsprojects.com/en/1.1.x/) - learn about Flask features and API.
+### **Vercel (Recommended)**
+1. Connect your GitHub repository to Vercel
+2. Add environment variables in Vercel dashboard
+3. Deploy automatically on push to main branch
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+### **Other Platforms**
+- **Netlify**: Configure build settings for Next.js
+- **Railway**: Use Next.js template
+- **Docker**: Use the included Dockerfile (if available)
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our contributing guidelines:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'feat: add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+### **Development Guidelines**
+- Follow TypeScript best practices
+- Use conventional commit messages
+- Maintain glassmorphism design consistency
+- Test on multiple devices and browsers
+- Update documentation for new features
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 🙏 Acknowledgments
+
+- **IBM Watson ML** for powerful machine learning capabilities
+- **Next.js Team** for the amazing React framework
+- **TailwindCSS** for the utility-first CSS framework
+- **Lucide** for beautiful icons
+- **Vercel** for seamless deployment platform
+
+---
+
+## 📞 Support
+
+- **Issues**: [GitHub Issues](https://github.com/Marsh16/leafs-image-classification/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/Marsh16/leafs-image-classification/discussions)
+- **Email**: [Your Email]
+
+---
+
+<p align="center">
+  <strong>Made with ❤️ for farmers and agricultural professionals</strong>
+</p>
+
+<p align="center">
+  <a href="#-leafsai---ai-powered-plant-disease-detection">⬆️ Back to Top</a>
+</p>
