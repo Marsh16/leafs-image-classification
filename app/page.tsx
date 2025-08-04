@@ -13,6 +13,7 @@ import { ChatMessage } from "./components/ChatMessage";
 import { UploadInterface } from "./components/UploadInterface";
 import { ChatInterface } from "./components/ChatInterface";
 import { Footer } from "./components/Footer";
+import { ModelLoadingIndicator } from "./components/ModelLoadingIndicator";
 import { nanoid } from "nanoid"; // you may need to install this if you haven’t
 
 export default function Home() {
@@ -23,6 +24,8 @@ export default function Home() {
   const [confidence, setConfidence] = useState<number | null>(null);
   const [history, setHistory] = useState<LeafHistoryItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [loadingMessage, setLoadingMessage] = useState<string>("Thinking...");
+  const [isModelReloading, setIsModelReloading] = useState<boolean>(false);
   const [currentDateTime, setCurrentDateTime] = useState<string>(
     formatDateTime(new Date())
   );
@@ -76,26 +79,66 @@ export default function Home() {
           ]);
 
           try {
-            // Send prediction request
-            const response = await fetch(
-              process.env.NEXT_PUBLIC_ENV === "development"
-                ? "/api/predict"
-                : "/api/predict",
-              {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ data: base64String }),
+            // Send streaming prediction request
+            const response = await fetch("/api/predict", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ data: base64String, stream: true }),
+            });
+
+            if (!response.ok || !response.body) {
+              throw new Error("Streaming failed");
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder("utf-8");
+            let finalResult: PredictionResult | null = null;
+
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+
+              const chunk = decoder.decode(value, { stream: true });
+              const lines = chunk.split('\n');
+
+              for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                  const data = line.slice(6);
+                  if (data === '[DONE]') break;
+
+                  try {
+                    const parsed = JSON.parse(data);
+
+                    if (parsed.status === 'loading') {
+                      setLoadingMessage(parsed.message);
+                      // Check if model is reloading based on message content
+                      const isReloading = parsed.message.toLowerCase().includes('model is starting') ||
+                                        parsed.message.toLowerCase().includes('model is still loading') ||
+                                        parsed.message.toLowerCase().includes('cloud deployment');
+                      setIsModelReloading(isReloading);
+                    } else if (parsed.status === 'complete') {
+                      finalResult = {
+                        class: parsed.class,
+                        confidence: parsed.confidence,
+                      };
+                      setLoadingMessage("Processing complete!");
+                      setIsModelReloading(false);
+                    } else if (parsed.status === 'error') {
+                      throw new Error(parsed.error);
+                    }
+                  } catch (parseError) {
+                    console.warn("Failed to parse streaming data:", parseError);
+                  }
+                }
               }
-            );
+            }
 
-            const result = (await response.json()) as PredictionResult;
-
-            if (response.ok) {
+            if (finalResult) {
               // Create new history entry
               const entry: LeafHistoryItem = {
                 image: imageSrc,
-                class: result.class,
-                confidence: result.confidence,
+                class: finalResult.class,
+                confidence: finalResult.confidence,
                 timestamp: new Date().toISOString(),
               };
 
@@ -106,7 +149,7 @@ export default function Home() {
               // Update history
               const updatedHistory = [entry, ...history];
               setHistory(updatedHistory);
-              
+
               try {
                 sessionStorage.setItem(
                   "predictionHistory",
@@ -124,22 +167,57 @@ export default function Home() {
                   console.error("Failed to write to sessionStorage", e);
                 }
               }
+
               // Add assistant response
               setMessages((prev) => [
                 ...prev,
                 {
                   id: nanoid(),
                   role: "assistant",
-                  content: `This leaf is likely ${result.class} with ${result.confidence}% confidence.`,
+                  content: `This leaf is likely ${finalResult!.class} with ${finalResult!.confidence}% confidence.`,
                 },
               ]);
-            } else {
-              console.error("Prediction error:", result);
             }
           } catch (error) {
             console.error("Error uploading image:", error);
+            // Fallback to non-streaming request
+            try {
+              const fallbackResponse = await fetch("/api/predict", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ data: base64String }),
+              });
+
+              const result = (await fallbackResponse.json()) as PredictionResult;
+
+              if (fallbackResponse.ok) {
+                const entry: LeafHistoryItem = {
+                  image: imageSrc,
+                  class: result.class,
+                  confidence: result.confidence,
+                  timestamp: new Date().toISOString(),
+                };
+
+                setPrediction(entry.class);
+                setConfidence(entry.confidence);
+                setHistory([entry, ...history]);
+
+                setMessages((prev) => [
+                  ...prev,
+                  {
+                    id: nanoid(),
+                    role: "assistant",
+                    content: `This leaf is likely ${result.class} with ${result.confidence}% confidence.`,
+                  },
+                ]);
+              }
+            } catch (fallbackError) {
+              console.error("Fallback request also failed:", fallbackError);
+            }
           } finally {
             setLoading(false);
+            setLoadingMessage("Thinking...");
+            setIsModelReloading(false);
           }
         }
       };
@@ -274,8 +352,11 @@ export default function Home() {
 
             {/* Loading indicator */}
             {loading && (
-              <div className="text-sm text-zinc-500 animate-pulse font-mono">
-                Thinking...
+              <div className="flex justify-center w-full">
+                <ModelLoadingIndicator
+                  message={loadingMessage}
+                  isModelReloading={isModelReloading}
+                />
               </div>
             )}
           </div>

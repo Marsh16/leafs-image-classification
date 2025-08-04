@@ -60,12 +60,42 @@ function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// Check if error indicates model is reloading/cold starting
+function isModelReloadingError(response: Response, errorText: string): boolean {
+  // Common indicators of model reloading:
+  // - 503 Service Unavailable
+  // - 502 Bad Gateway
+  // - Error messages containing "loading", "starting", "initializing", etc.
+  if (response.status === 503 || response.status === 502) {
+    return true;
+  }
+
+  const reloadingKeywords = [
+    'loading', 'starting', 'initializing', 'warming up',
+    'cold start', 'model not ready', 'deployment starting'
+  ];
+
+  return reloadingKeywords.some(keyword =>
+    errorText.toLowerCase().includes(keyword)
+  );
+}
+
+// Send streaming update to client
+function sendStreamUpdate(encoder: TextEncoder, controller: ReadableStreamDefaultController, message: string) {
+  const data = `data: ${JSON.stringify({ status: 'loading', message })}\n\n`;
+  controller.enqueue(encoder.encode(data));
+}
+
 async function tryWatsonInference(
   bearerToken: string,
   inputData: number[][][][],
+  encoder?: TextEncoder,
+  controller?: ReadableStreamDefaultController,
   retries = 5,
   waitMs = 3000
 ): Promise<Response> {
+  let isModelReloading = false;
+
   for (let attempt = 1; attempt <= retries; attempt++) {
     const response = await fetch(WATSON_URL, {
       method: "POST",
@@ -84,13 +114,42 @@ async function tryWatsonInference(
     });
 
     if (response.ok) {
+      if (encoder && controller && isModelReloading) {
+        sendStreamUpdate(encoder, controller, "Model is ready! Processing your image...");
+      }
       return response;
-    } else if (attempt < retries) {
-      console.warn(`Inference failed (attempt ${attempt}), retrying after ${waitMs}ms...`);
-      await delay(waitMs);
     } else {
       const errorText = await response.text();
-      throw new Error(`Watson ML error after ${retries} attempts: ${errorText}`);
+      const isReloading = isModelReloadingError(response, errorText);
+
+      if (isReloading && !isModelReloading) {
+        isModelReloading = true;
+        if (encoder && controller) {
+          sendStreamUpdate(encoder, controller, "Model is starting up from cloud deployment. This may take 30-60 seconds...");
+        }
+      }
+
+      if (attempt < retries) {
+        // Use longer wait times for model reloading
+        const currentWaitMs = isModelReloading ? Math.min(waitMs * Math.pow(1.5, attempt - 1), 15000) : waitMs;
+
+        if (encoder && controller) {
+          const remainingAttempts = retries - attempt;
+          const estimatedWaitTime = Math.ceil(currentWaitMs * remainingAttempts / 1000);
+          sendStreamUpdate(
+            encoder,
+            controller,
+            isModelReloading
+              ? `Model is still loading... Estimated wait time: ${estimatedWaitTime}s (attempt ${attempt}/${retries})`
+              : `Retrying prediction... (attempt ${attempt}/${retries})`
+          );
+        }
+
+        console.warn(`Inference failed (attempt ${attempt}), retrying after ${currentWaitMs}ms...`);
+        await delay(currentWaitMs);
+      } else {
+        throw new Error(`Watson ML error after ${retries} attempts: ${errorText}`);
+      }
     }
   }
   throw new Error("Inference failed unexpectedly.");
@@ -98,7 +157,7 @@ async function tryWatsonInference(
 
 export async function POST(req: NextRequest) {
   try {
-    const { data: base64Image } = await req.json();
+    const { data: base64Image, stream = false } = await req.json();
 
     if (!base64Image) {
       return new Response(JSON.stringify({ error: "No image data provided" }), {
@@ -110,6 +169,65 @@ export async function POST(req: NextRequest) {
     const inputData = await preprocessBase64Image(base64Image);
     const bearerToken = await getBearerToken();
 
+    // Handle streaming response for real-time updates
+    if (stream) {
+      const encoder = new TextEncoder();
+
+      const stream = new ReadableStream({
+        async start(controller) {
+          try {
+            sendStreamUpdate(encoder, controller, "Starting prediction...");
+
+            const response = await tryWatsonInference(
+              bearerToken,
+              inputData,
+              encoder,
+              controller,
+              8, // More retries for streaming
+              3000
+            );
+
+            sendStreamUpdate(encoder, controller, "Processing results...");
+
+            const result = await response.json();
+            const predictions = result.predictions[0].values[0];
+
+            const maxIndex = predictions.indexOf(Math.max(...predictions));
+            const predictedClass = CLASS_NAMES[maxIndex];
+            const confidence = +(predictions[maxIndex] * 100).toFixed(2);
+
+            // Send final result
+            const finalData = `data: ${JSON.stringify({
+              status: 'complete',
+              result: `This image most likely belongs to ${predictedClass} with a ${confidence}% confidence.`,
+              class: predictedClass,
+              confidence,
+            })}\n\n`;
+
+            controller.enqueue(encoder.encode(finalData));
+            controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+            controller.close();
+          } catch (error: any) {
+            const errorData = `data: ${JSON.stringify({
+              status: 'error',
+              error: error.message || "Prediction failed"
+            })}\n\n`;
+            controller.enqueue(encoder.encode(errorData));
+            controller.close();
+          }
+        },
+      });
+
+      return new Response(stream, {
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+        },
+      });
+    }
+
+    // Regular non-streaming response
     const response = await tryWatsonInference(bearerToken, inputData);
     const result = await response.json();
     const predictions = result.predictions[0].values[0];
