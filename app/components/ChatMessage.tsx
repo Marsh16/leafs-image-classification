@@ -19,41 +19,62 @@ export const ChatMessage = ({ message }: ChatMessageProps) => {
 
   return (
     <div
-      className={`p-4 rounded-xl max-w-[85%] leading-relaxed whitespace-pre-line shadow ${
-        isUser
-          ? "ml-auto bg-cyan-600 text-white"
-          : "bg-zinc-100 dark:bg-zinc-800 text-black dark:text-zinc-100"
+      className={`max-w-[85%] leading-relaxed ${
+        isUser ? "ml-auto" : "mr-auto"
       }`}
     >
       {isImage ? (
-        <div className="mb-4 flex justify-center">
-          <Image
-            src={message.content}
-            alt="Uploaded Leaf"
-            width={300}
-            height={300}
-            className="rounded-lg shadow-md border border-zinc-300 dark:border-zinc-600"
-          />
+        <div className="glass-subtle rounded-2xl p-4 bento-item">
+          <div className="flex justify-center">
+            <Image
+              src={message.content}
+              alt="Uploaded Leaf"
+              width={300}
+              height={300}
+              className="rounded-xl shadow-lg object-cover"
+            />
+          </div>
         </div>
       ) : (
         <div
-          className={`${
+          className={`glass-subtle rounded-2xl p-4 bento-item ${
             isUser
-              ? "text-right font-mono"
-              : "prose prose-sm dark:prose-invert max-w-none"
+              ? "bg-gradient-to-br from-emerald-400/20 to-cyan-400/20 border-emerald-200 dark:border-emerald-800"
+              : "border-slate-200 dark:border-slate-700"
           }`}
         >
-          <div className="text-left text-sm leading-snug dark:text-white">
+          <div className={`text-sm leading-relaxed ${
+            isUser
+              ? "text-slate-800 dark:text-slate-200 font-medium"
+              : "text-slate-700 dark:text-slate-300"
+          }`}>
             <ReactMarkdown
               components={{
                 p: ({ node, ...props }) => (
-                  <p className="mb-0 mt-0">{props.children}</p>
+                  <p className="mb-2 last:mb-0">{props.children}</p>
                 ),
                 strong: ({ node, ...props }) => (
-                  <strong className="font-semibold mb-0 mt-0">{props.children}</strong>
+                  <strong className="font-bold text-emerald-600 dark:text-emerald-400">
+                    {props.children}
+                  </strong>
+                ),
+                em: ({ node, ...props }) => (
+                  <em className="italic text-slate-600 dark:text-slate-400">
+                    {props.children}
+                  </em>
+                ),
+                ul: ({ node, ...props }) => (
+                  <ul className="list-disc list-inside space-y-1 mt-2 ml-4">
+                    {props.children}
+                  </ul>
                 ),
                 li: ({ node, ...props }) => (
-                  <li className="ml-4 list-disc mb-0 mt-0">{props.children}</li>
+                  <li className="text-sm">{props.children}</li>
+                ),
+                code: ({ node, ...props }) => (
+                  <code className="bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-xs font-mono">
+                    {props.children}
+                  </code>
                 ),
               }}
             >

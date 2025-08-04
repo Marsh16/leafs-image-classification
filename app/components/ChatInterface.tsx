@@ -1,8 +1,6 @@
 "use client";
 
 import { useRef } from "react";
-import { Card } from "./ui/Card";
-import { Button } from "./ui/button";
 
 interface ChatInterfaceProps {
   question: string;
@@ -27,10 +25,16 @@ export const ChatInterface = ({
   };
 
   return (
-    <Card className="w-full max-w-3xl p-6 bg-white dark:bg-zinc-800 shadow-lg space-y-4">
-      <div className="flex items-end gap-2">
-        <label className="cursor-pointer text-zinc-500 hover:text-cyan-500 text-2xl">
-          📤
+    <div className="w-full max-w-4xl">
+      <div className="flex items-end gap-4">
+        {/* Upload Button */}
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          className="glass-subtle rounded-2xl p-4 hover:scale-105 transition-all duration-300 group"
+        >
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-xl group-hover:scale-110 transition-transform duration-300">
+            📤
+          </div>
           <input
             type="file"
             accept="image/*"
@@ -38,24 +42,31 @@ export const ChatInterface = ({
             onChange={onUpload}
             ref={fileInputRef}
           />
-        </label>
+        </button>
 
-        <textarea
-          placeholder="Ask a question about the disease..."
-          className="flex-grow resize-none rounded-lg p-3 text-sm bg-zinc-100 dark:bg-zinc-900 text-black dark:text-white border border-zinc-300 dark:border-zinc-700 font-mono"
-          rows={2}
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-          onKeyDown={handleKeyDown}
-        />
+        {/* Text Input */}
+        <div className="flex-grow glass-subtle rounded-2xl p-4">
+          <textarea
+            placeholder="Ask a question about the disease or upload another leaf..."
+            className="w-full resize-none bg-transparent text-slate-800 dark:text-slate-200 placeholder-slate-500 dark:placeholder-slate-400 border-none outline-none text-sm leading-relaxed"
+            rows={2}
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+            onKeyDown={handleKeyDown}
+          />
+        </div>
 
-        <Button
+        {/* Send Button */}
+        <button
           onClick={onSend}
-          className="bg-cyan-600 hover:bg-cyan-700 text-white font-semibold px-4 py-2 rounded-lg"
+          disabled={!question.trim()}
+          className="glass-subtle rounded-2xl p-4 bg-gradient-to-br from-emerald-400 to-cyan-400 hover:from-emerald-500 hover:to-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:scale-105 group"
         >
-          Send
-        </Button>
+          <div className="w-10 h-10 flex items-center justify-center text-white font-bold group-hover:scale-110 transition-transform duration-300">
+            ➤
+          </div>
+        </button>
       </div>
-    </Card>
+    </div>
   );
 };

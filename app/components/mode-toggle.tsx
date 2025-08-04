@@ -18,18 +18,18 @@ export function ModeToggle() {
   };
 
   return (
-    <Button
-      variant="outline"
-      size="icon"
+    <button
       onClick={toggleTheme}
-      className="rounded-lg transition-colors duration-300 bg-zinc-200 dark:bg-zinc-700"
+      className="glass-subtle rounded-2xl p-3 hover:scale-105 transition-all duration-300 group"
     >
-      {theme === "light" ? (
-        <Moon className="h-5 w-5" />
-      ) : (
-        <Sun className="h-5 w-5 text-yellow-400" />
-      )}
+      <div className="w-8 h-8 flex items-center justify-center">
+        {theme === "light" ? (
+          <Moon className="h-5 w-5 text-slate-600 dark:text-slate-400 group-hover:text-slate-800 dark:group-hover:text-slate-200 transition-colors" />
+        ) : (
+          <Sun className="h-5 w-5 text-yellow-500 group-hover:text-yellow-400 transition-colors" />
+        )}
+      </div>
       <span className="sr-only">Toggle theme</span>
-    </Button>
+    </button>
   );
 }

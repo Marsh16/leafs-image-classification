@@ -15,25 +15,47 @@ interface PastLeafCardProps {
   index: number;
 }
 
-export const PastLeafCard = ({ item, index }: PastLeafCardProps) => (
-  <Card className="p-3 bg-zinc-100 dark:bg-zinc-800 shadow-md hover:shadow-xl transition duration-300">
-    <div className="flex gap-2 items-center">
-      <Image
-        src={item.image}
-        alt={`Leaf ${index}`}
-        width={60}
-        height={45}
-        className="rounded-lg"
-      />
-      <div>
-        <p className="text-sm font-mono text-blue-600 dark:text-blue-400">
-          <strong>{item.class}</strong>
-        </p>
-        <p className="text-xs text-zinc-600 dark:text-zinc-400">
-          {item.confidence}% •{" "}
-          {new Date(item.timestamp).toLocaleTimeString()}
-        </p>
+export const PastLeafCard = ({ item, index }: PastLeafCardProps) => {
+  const isHealthy = item.class === 'Healthy';
+
+  return (
+    <div className="glass-subtle rounded-xl p-3 hover:scale-105 transition-all duration-300 group cursor-pointer">
+      <div className="flex gap-3 items-center">
+        <div className="relative">
+          <Image
+            src={item.image}
+            alt={`Leaf ${index}`}
+            width={48}
+            height={48}
+            className="rounded-lg object-cover"
+          />
+          <div className={`absolute -top-1 -right-1 w-4 h-4 rounded-full ${
+            isHealthy
+              ? 'bg-emerald-400'
+              : 'bg-orange-400'
+          } flex items-center justify-center text-xs`}>
+            {isHealthy ? '✓' : '⚠'}
+          </div>
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <p className={`text-sm font-bold truncate ${
+            isHealthy
+              ? 'text-emerald-600 dark:text-emerald-400'
+              : 'text-orange-600 dark:text-orange-400'
+          }`}>
+            {item.class}
+          </p>
+          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+            <span className="font-medium">{item.confidence}%</span>
+            <span>•</span>
+            <span>{new Date(item.timestamp).toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit'
+            })}</span>
+          </div>
+        </div>
       </div>
     </div>
-  </Card>
-);
+  );
+};

@@ -299,94 +299,165 @@ export default function Home() {
     confidence > 75;
 
   return (
-    <main className="flex min-h-screen bg-gradient-to-br from-cyan-600 to-blue-400 dark:from-cyan-800 dark:to-blue-900">
-      {/* Sidebar with history */}
-      <aside className="w-full md:w-1/4 bg-white dark:bg-zinc-900 p-4 overflow-y-auto border-r border-zinc-300 dark:border-zinc-700">
-        <h2 className="text-lg font-bold mb-4 text-center text-black dark:text-white">
-          🔮 Past Leafs
-        </h2>
-
-        <div className="space-y-4">
-          {history.map((item, index) => (
-            <PastLeafCard key={index} item={item} index={index} />
-          ))}
-        </div>
-
-        {/* Current date and time display */}
-        <div className="fixed bottom-5 left-5 z-50">
-          <div className="bg-white dark:bg-zinc-800 rounded-full px-4 py-2 shadow-md flex items-center">
-            <Clock className="w-4 h-4 mr-2 text-zinc-500 dark:text-zinc-400" />
-            <span className="text-sm text-zinc-700 dark:text-zinc-300">
+    <main className="min-h-screen p-4 md:p-6 lg:p-8">
+      {/* Header */}
+      <header className="glass-strong rounded-3xl p-6 mb-8 bento-item">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-400 to-cyan-400 flex items-center justify-center text-2xl">
+              🍃
+            </div>
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-emerald-600 to-cyan-600 dark:from-emerald-400 dark:to-cyan-400 bg-clip-text text-transparent">
+                Leafs.ai
+              </h1>
+              <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">
+                AI-Powered Plant Disease Detection
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="hidden md:flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+              <Clock className="w-4 h-4" />
               {currentDateTime}
-            </span>
-          </div>
-        </div>
-      </aside>
-
-      {/* Main content */}
-      <section className="flex-1 p-6">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-bold text-white">Leafs.ai 🍃✨</h1>
-          </div>
-          <div className="flex items-center">
+            </div>
             <ModeToggle />
           </div>
         </div>
+      </header>
 
-        {/* Welcome message */}
-        {messages.length === 0 && (
-          <div className="text-center mb-16 text-white">
-            <h2 className="text-2xl font-mono mb-2">Hello Farmer 👨‍🌾</h2>
-            <p className="text-xl font-mono">Drop a mango leaf for vibes 🍵</p>
-          </div>
-        )}
+      {/* Main Bento Grid Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+        {/* Chat/Upload Area - Takes 3 columns on large screens */}
+        <div className="lg:col-span-3 space-y-6">
+          {/* Welcome message or Chat messages */}
+          {messages.length === 0 ? (
+            <div className="glass-strong rounded-3xl p-8 md:p-12 text-center bento-item">
+              <div className="max-w-2xl mx-auto">
+                <div className="w-20 h-20 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-emerald-400 via-cyan-400 to-blue-400 flex items-center justify-center text-4xl">
+                  👨‍🌾
+                </div>
+                <h2 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-slate-800 to-slate-600 dark:from-slate-200 dark:to-slate-400 bg-clip-text text-transparent">
+                  Hello Farmer!
+                </h2>
+                <p className="text-lg text-slate-600 dark:text-slate-400 mb-8">
+                  Upload a mango leaf image to detect diseases and get expert advice
+                </p>
+                <UploadInterface onUpload={handleImageUpload} />
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Chat Messages */}
+              <div className="glass rounded-3xl p-6 bento-item">
+                <div className="space-y-4 max-h-96 overflow-y-auto">
+                  {messages.map((msg, idx) => (
+                    <ChatMessage key={idx} message={msg} />
+                  ))}
 
-        <div className="flex flex-col items-center">
-          {/* Chat messages display */}
-          <div className="w-full max-w-3xl py-6 space-y-3">
-            {messages.map((msg, idx) => (
-              <ChatMessage key={idx} message={msg} />
-            ))}
+                  {/* Loading indicator */}
+                  {loading && (
+                    <div className="flex justify-center w-full">
+                      <ModelLoadingIndicator
+                        message={loadingMessage}
+                        isModelReloading={isModelReloading}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
 
-            {/* Loading indicator */}
-            {loading && (
-              <div className="flex justify-center w-full">
-                <ModelLoadingIndicator
-                  message={loadingMessage}
-                  isModelReloading={isModelReloading}
+              {/* Chat Input */}
+              <div className="glass rounded-3xl p-6 bento-item">
+                <ChatInterface
+                  question={question}
+                  setQuestion={setQuestion}
+                  onSend={handleLlmQuestion}
+                  onUpload={handleImageUpload}
                 />
               </div>
-            )}
-          </div>
-
-          {/* Input interface */}
-          {messages.length === 0 ? (
-            <UploadInterface onUpload={handleImageUpload} />
-          ) : (
-            <ChatInterface
-              question={question}
-              setQuestion={setQuestion}
-              onSend={handleLlmQuestion}
-              onUpload={handleImageUpload}
-            />
-          )}
-
-          {/* Confetti effect for healthy leaves */}
-          {showConfetti && (
-            <Confetti
-              width={width}
-              height={height}
-              numberOfPieces={250}
-              recycle={false}
-              colors={["#00F2B4", "#FF77FF", "#6B5B95", "#5DD6F5"]}
-            />
+            </>
           )}
         </div>
 
-        <Footer />
-      </section>
+        {/* Sidebar - History and Stats */}
+        <div className="lg:col-span-1 space-y-6">
+          {/* History Section */}
+          <div className="glass rounded-3xl p-6 bento-item">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-lg">
+                🔮
+              </div>
+              <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">
+                Recent Scans
+              </h3>
+            </div>
+
+            <div className="space-y-3 max-h-80 overflow-y-auto">
+              {history.slice(0, 5).map((item, index) => (
+                <PastLeafCard key={index} item={item} index={index} />
+              ))}
+
+              {history.length === 0 && (
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-2xl">
+                    🌱
+                  </div>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                    No scans yet
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Stats Card */}
+          {history.length > 0 && (
+            <div className="glass rounded-3xl p-6 bento-item">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-400 to-indigo-400 flex items-center justify-center text-lg">
+                  📊
+                </div>
+                <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">
+                  Quick Stats
+                </h3>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-slate-600 dark:text-slate-400">Total Scans</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-200">{history.length}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-slate-600 dark:text-slate-400">Healthy Leaves</span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                    {history.filter(h => h.class === 'Healthy').length}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-slate-600 dark:text-slate-400">Avg Confidence</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-200">
+                    {Math.round(history.reduce((acc, h) => acc + h.confidence, 0) / history.length)}%
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Confetti effect for healthy leaves */}
+      {showConfetti && (
+        <Confetti
+          width={width}
+          height={height}
+          numberOfPieces={250}
+          recycle={false}
+          colors={["#10b981", "#06b6d4", "#8b5cf6", "#f59e0b"]}
+        />
+      )}
+
+      <Footer />
     </main>
   );
 }

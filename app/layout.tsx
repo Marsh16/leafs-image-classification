@@ -19,9 +19,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.className} bg-gradient-to-br from-green-400 to-blue-500 dark:from-blue-900 dark:to-purple-800 text-black dark:text-white`}>
+      <body className={`${inter.className} min-h-screen gradient-mesh`}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-          {children}
+          <div className="min-h-screen bg-gradient-to-br from-slate-50/90 via-blue-50/80 to-indigo-100/90 dark:from-slate-900/90 dark:via-slate-800/80 dark:to-slate-900/90">
+            {children}
+          </div>
         </ThemeProvider>
       </body>
     </html>

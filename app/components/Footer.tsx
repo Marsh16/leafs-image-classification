@@ -1,9 +1,11 @@
 export const Footer = () => {
   return (
-    <main className="sticky top-[100vh] flex-col items-center">
-      <footer className="mt-auto py-4 text-center text-sm text-gray-50 dark:text-gray-400 font-mono">
-        © 2025 Marsh16. All rights reserved 🌿💀
-      </footer>
-    </main>
+    <footer className="mt-16 text-center">
+      <div className="glass-subtle rounded-2xl p-4 inline-block">
+        <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">
+          © 2025 Marsh16. All rights reserved 🌿✨
+        </p>
+      </div>
+    </footer>
   );
 };
