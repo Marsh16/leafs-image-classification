@@ -44,10 +44,10 @@ export const ModelLoadingIndicator = ({
       <div className="flex flex-col items-center space-y-6">
         {/* Loading animation */}
         <div className="relative">
-          <div className="w-16 h-16 border-4 border-emerald-200 dark:border-emerald-800 rounded-full animate-spin border-t-emerald-500 dark:border-t-emerald-400"></div>
+          <div className="w-16 h-16 border-4 border-slate-200 dark:border-slate-700 rounded-full animate-spin border-t-teal-500 dark:border-t-teal-400"></div>
           {isModelReloading && (
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-cyan-400 rounded-full animate-pulse"></div>
+              <div className="w-10 h-10 bg-gradient-to-br from-teal-400 to-teal-500 rounded-full animate-pulse shadow-sm"></div>
             </div>
           )}
         </div>
@@ -62,13 +62,12 @@ export const ModelLoadingIndicator = ({
             <>
               <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-3 mb-4 overflow-hidden">
                 <div
-                  className="bg-gradient-to-r from-emerald-400 to-cyan-400 h-3 rounded-full transition-all duration-1000 ease-out"
+                  className="bg-gradient-to-r from-teal-400 to-teal-500 h-3 rounded-full transition-all duration-1000 ease-out"
                   style={{ width: `${progress}%` }}
                 ></div>
               </div>
               <div className="space-y-2">
-                <p className="text-sm text-slate-600 dark:text-slate-400 flex items-center justify-center gap-2">
-                  <span className="text-lg">🚀</span>
+                <p className="text-sm text-slate-600 dark:text-slate-400 text-center">
                   Model is starting up from cloud deployment
                 </p>
                 <p className="text-xs text-slate-500 dark:text-slate-500">
@@ -81,13 +80,12 @@ export const ModelLoadingIndicator = ({
 
         {/* Helpful tip */}
         {isModelReloading && (
-          <div className="glass-subtle rounded-2xl p-4 border border-emerald-200 dark:border-emerald-800">
+          <div className="glass-subtle rounded-2xl p-4 border border-teal-200 dark:border-teal-800">
             <div className="text-center">
-              <div className="text-2xl mb-2">💡</div>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                <strong className="text-emerald-600 dark:text-emerald-400">Why is this happening?</strong><br />
-                Our AI model runs on cloud infrastructure and needs to "warm up"
-                when it hasn't been used recently. This ensures optimal performance!
+                <strong className="text-teal-600 dark:text-teal-400">AI Model Initialization</strong><br />
+                Neural network is booting up from cloud infrastructure.
+                This ensures peak performance for your analysis.
               </p>
             </div>
           </div>

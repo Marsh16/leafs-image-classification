@@ -39,7 +39,7 @@ export const ChatMessage = ({ message }: ChatMessageProps) => {
         <div
           className={`glass-subtle rounded-2xl p-4 bento-item ${
             isUser
-              ? "bg-gradient-to-br from-emerald-400/20 to-cyan-400/20 border-emerald-200 dark:border-emerald-800"
+              ? "bg-gradient-to-br from-teal-50/50 to-slate-50/50 dark:from-teal-900/20 dark:to-slate-800/20 border-teal-200 dark:border-teal-800"
               : "border-slate-200 dark:border-slate-700"
           }`}
         >
@@ -54,7 +54,7 @@ export const ChatMessage = ({ message }: ChatMessageProps) => {
                   <p className="mb-2 last:mb-0">{props.children}</p>
                 ),
                 strong: ({ node, ...props }) => (
-                  <strong className="font-bold text-emerald-600 dark:text-emerald-400">
+                  <strong className="font-bold text-teal-600 dark:text-teal-400">
                     {props.children}
                   </strong>
                 ),

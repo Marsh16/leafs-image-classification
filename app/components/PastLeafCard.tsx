@@ -31,17 +31,17 @@ export const PastLeafCard = ({ item, index }: PastLeafCardProps) => {
           />
           <div className={`absolute -top-1 -right-1 w-4 h-4 rounded-full ${
             isHealthy
-              ? 'bg-emerald-400'
+              ? 'bg-teal-400'
               : 'bg-orange-400'
           } flex items-center justify-center text-xs`}>
-            {isHealthy ? '✓' : '⚠'}
+            {isHealthy ? '✓' : '!'}
           </div>
         </div>
 
         <div className="flex-1 min-w-0">
           <p className={`text-sm font-bold truncate ${
             isHealthy
-              ? 'text-emerald-600 dark:text-emerald-400'
+              ? 'text-teal-600 dark:text-teal-400'
               : 'text-orange-600 dark:text-orange-400'
           }`}>
             {item.class}

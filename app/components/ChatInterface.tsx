@@ -32,8 +32,8 @@ export const ChatInterface = ({
           onClick={() => fileInputRef.current?.click()}
           className="glass-subtle rounded-2xl p-4 hover:scale-105 transition-all duration-300 group"
         >
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-xl group-hover:scale-110 transition-transform duration-300">
-            📤
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-100 to-teal-50 dark:from-slate-800 dark:to-slate-700 border border-teal-200 dark:border-teal-800 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-sm">
+            <div className="w-5 h-5 border-2 border-teal-400 rounded border-dashed"></div>
           </div>
           <input
             type="file"
@@ -60,10 +60,10 @@ export const ChatInterface = ({
         <button
           onClick={onSend}
           disabled={!question.trim()}
-          className="glass-subtle rounded-2xl p-4 bg-gradient-to-br from-emerald-400 to-cyan-400 hover:from-emerald-500 hover:to-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:scale-105 group"
+          className="glass-subtle rounded-2xl p-4 bg-gradient-to-br from-teal-400 to-teal-500 hover:from-teal-500 hover:to-teal-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:scale-105 group shadow-sm"
         >
           <div className="w-10 h-10 flex items-center justify-center text-white font-bold group-hover:scale-110 transition-transform duration-300">
-            ➤
+            →
           </div>
         </button>
       </div>
