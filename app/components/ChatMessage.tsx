@@ -51,11 +51,13 @@ export const ChatMessage = ({ message }: ChatMessageProps) => {
               : "border-slate-200 dark:border-slate-700"
           }`}
         >
-          <div className={`text-sm leading-relaxed ${
-            isUser
-              ? "text-slate-800 dark:text-slate-200 font-medium"
-              : "text-slate-700 dark:text-slate-300"
-          }`}>
+          <div
+            className={`text-sm leading-relaxed ${
+              isUser
+                ? "text-slate-800 dark:text-slate-200 font-medium"
+                : "text-slate-700 dark:text-slate-300"
+            }`}
+          >
             <ReactMarkdown
               components={{
                 p: ({ node, ...props }) => (
@@ -136,74 +138,29 @@ export const ChatInterface = ({ diseaseName }: ChatInterfaceProps) => {
       timestamp: Date.now(),
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMessage]);
     setInputValue("");
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/questions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          disease_name: diseaseName,
-          questions: question.trim(),
-          session_id: sessionId,
-        }),
-      });
+      // Mock assistant reply instead of API call
+      const assistantReply: Message = {
+        role: "assistant",
+        content: `You asked: "${question.trim()}". Sorry, no backend call is made in this demo.`,
+        timestamp: Date.now(),
+      };
 
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
+      // Simulate async delay for user experience
+      await new Promise((r) => setTimeout(r, 800));
 
-      // Get session ID from response header
-      const newSessionId = response.headers.get("X-Session-ID");
-      if (newSessionId && !sessionId) {
-        setSessionId(newSessionId);
-      }
-
-      // Handle streaming response
-      const reader = response.body?.getReader();
-      if (!reader) throw new Error("No response body");
-
-      let assistantMessage = "";
-
-      // Add empty assistant message to show loading
-      const assistantMessageIndex = messages.length + 1;
-      setMessages(prev => [
-        ...prev,
-        {
-          role: "assistant",
-          content: "",
-          timestamp: Date.now(),
-        },
-      ]);
-
-      // Read the stream
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = new TextDecoder().decode(value);
-        assistantMessage += chunk;
-
-        // Update the assistant message
-        setMessages(prev =>
-          prev.map((msg, index) =>
-            index === assistantMessageIndex
-              ? { ...msg, content: assistantMessage }
-              : msg
-          )
-        );
-      }
+      setMessages((prev) => [...prev, assistantReply]);
     } catch (error) {
-      console.error("Error:", error);
-      setMessages(prev => [
+      setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content: "Sorry, there was an error processing your request. Please try again.",
+          content:
+            "Sorry, there was an error processing your request. Please try again.",
           timestamp: Date.now(),
         },
       ]);
@@ -251,27 +208,38 @@ export const ChatInterface = ({ diseaseName }: ChatInterfaceProps) => {
         {messages.length === 0 && (
           <div className="text-center text-slate-500 dark:text-slate-400 mt-8">
             <p>Ask me anything about your mango plant care!</p>
-            <p className="text-sm mt-2">I remember our conversation, so feel free to follow up on previous topics.</p>
+            <p className="text-sm mt-2">
+              I remember our conversation, so feel free to follow up on previous
+              topics.
+            </p>
           </div>
         )}
-        
+
         {messages.map((message, index) => (
           <ChatMessage key={index} message={message} />
         ))}
-        
+
         {isLoading && (
           <div className="max-w-[85%] mr-auto">
             <div className="glass-subtle rounded-2xl p-4 bento-item border-slate-200 dark:border-slate-700">
               <div className="flex items-center space-x-2">
                 <div className="w-2 h-2 bg-teal-500 rounded-full animate-bounce"></div>
-                <div className="w-2 h-2 bg-teal-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                <div className="w-2 h-2 bg-teal-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                <span className="text-slate-500 dark:text-slate-400 text-sm ml-2">Thinking...</span>
+                <div
+                  className="w-2 h-2 bg-teal-500 rounded-full animate-bounce"
+                  style={{ animationDelay: "0.1s" }}
+                ></div>
+                <div
+                  className="w-2 h-2 bg-teal-500 rounded-full animate-bounce"
+                  style={{ animationDelay: "0.2s" }}
+                ></div>
+                <span className="text-slate-500 dark:text-slate-400 text-sm ml-2">
+                  Thinking...
+                </span>
               </div>
             </div>
           </div>
         )}
-        
+
         <div ref={messagesEndRef} />
       </div>
 

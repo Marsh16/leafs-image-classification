@@ -20,7 +20,7 @@ export const ChatInterface = ({
   const recognitionRef = useRef<any>(null);
 
   const [isListening, setIsListening] = useState(false);
-  const [language, setLanguage] = useState("-");
+  const [language, setLanguage] = useState("en-US");
   const [languageConfirmed, setLanguageConfirmed] = useState(false);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -103,7 +103,7 @@ export const ChatInterface = ({
           }}
           className="glass-subtle rounded-xl px-3 py-2 text-sm outline-none cursor-pointer border border-teal-200 dark:border-teal-800"
         >
-          <option value="-">Choose Language</option>
+          <option value="en-US">Choose Language</option>
           <option value="en-US">English</option>
           <option value="id-ID">Bahasa Indonesia</option>
         </select>

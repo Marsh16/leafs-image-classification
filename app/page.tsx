@@ -14,48 +14,62 @@ import { UploadInterface } from "./components/UploadInterface";
 import { ChatInterface } from "./components/ChatInterface";
 import { Footer } from "./components/Footer";
 import { ModelLoadingIndicator } from "./components/ModelLoadingIndicator";
-import { nanoid } from "nanoid"; // you may need to install this if you haven’t
+import { nanoid } from "nanoid";
 
 export default function Home() {
-  // State management
-  const [mounted, setMounted] = useState<boolean>(false);
+  // Call all hooks unconditionally
+  const [mounted, setMounted] = useState(false);
   const [currentImage, setCurrentImage] = useState<string | null>(null);
   const [prediction, setPrediction] = useState<string | null>(null);
   const [confidence, setConfidence] = useState<number | null>(null);
   const [history, setHistory] = useState<LeafHistoryItem[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [loadingMessage, setLoadingMessage] = useState<string>("Thinking...");
-  const [isModelReloading, setIsModelReloading] = useState<boolean>(false);
-  const [currentDateTime, setCurrentDateTime] = useState<string>(
-    formatDateTime(new Date())
-  );
-  const [question, setQuestion] = useState<string>("");
+  const [loading, setLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState("Thinking...");
+  const [isModelReloading, setIsModelReloading] = useState(false);
+  const [currentDateTime, setCurrentDateTime] = useState(formatDateTime(new Date()));
+  const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
-
   const { width, height } = useWindowSize();
+  const [sessionId, setSessionId] = useState<string | null>(null);
 
-  // Initialize component
+  // Effects - also unconditional
   useEffect(() => {
-    // Update time every second
     const timer = setInterval(() => {
       setCurrentDateTime(formatDateTime(new Date()));
     }, 1000);
 
-    // Load prediction history from session storage
     const stored = sessionStorage.getItem("predictionHistory");
     if (stored) {
       setHistory(JSON.parse(stored));
     }
 
-    // Set mounted state to allow rendering
     setMounted(true);
 
     return () => clearInterval(timer);
   }, []);
 
-  if (!mounted) return null; // Prevent SSR rendering
+  useEffect(() => {
+    const savedSessionId = localStorage.getItem("plant_doctor_session_id");
+    const savedMessages = localStorage.getItem("plant_doctor_messages");
 
-  // Handle image upload and prediction
+    if (savedSessionId && savedMessages) {
+      setSessionId(savedSessionId);
+      setMessages(JSON.parse(savedMessages));
+    }
+  }, []);
+
+  useEffect(() => {
+    if (sessionId && messages.length > 0) {
+      localStorage.setItem("plant_doctor_session_id", sessionId);
+      localStorage.setItem("plant_doctor_messages", JSON.stringify(messages));
+    }
+  }, [sessionId, messages]);
+
+  // Return early only after all hooks
+  if (!mounted) return null;
+
+  // Handlers
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -72,14 +86,12 @@ export default function Home() {
           setConfidence(null);
           setLoading(true);
 
-          // Add image to messages
           setMessages((prev) => [
             ...prev,
             { id: nanoid(), role: "user", content: `${imageSrc}` },
           ]);
 
           try {
-            // Send streaming prediction request
             const response = await fetch("/api/predict", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -111,17 +123,10 @@ export default function Home() {
 
                     if (parsed.status === "loading") {
                       setLoadingMessage(parsed.message);
-                      // Check if model is reloading based on message content
                       const isReloading =
-                        parsed.message
-                          .toLowerCase()
-                          .includes("model is starting") ||
-                        parsed.message
-                          .toLowerCase()
-                          .includes("model is still loading") ||
-                        parsed.message
-                          .toLowerCase()
-                          .includes("cloud deployment");
+                        parsed.message.toLowerCase().includes("model is starting") ||
+                        parsed.message.toLowerCase().includes("model is still loading") ||
+                        parsed.message.toLowerCase().includes("cloud deployment");
                       setIsModelReloading(isReloading);
                     } else if (parsed.status === "complete") {
                       finalResult = {
@@ -141,7 +146,6 @@ export default function Home() {
             }
 
             if (finalResult) {
-              // Create new history entry
               const entry: LeafHistoryItem = {
                 image: imageSrc,
                 class: finalResult.class,
@@ -149,24 +153,18 @@ export default function Home() {
                 timestamp: new Date().toISOString(),
               };
 
-              // Update state with prediction results
               setPrediction(entry.class);
               setConfidence(entry.confidence);
 
-              // Update history
               const updatedHistory = [entry, ...history];
               setHistory(updatedHistory);
 
               try {
-                sessionStorage.setItem(
-                  "predictionHistory",
-                  JSON.stringify(updatedHistory)
-                );
+                sessionStorage.setItem("predictionHistory", JSON.stringify(updatedHistory));
               } catch (e) {
                 if (
                   e instanceof DOMException &&
-                  (e.name === "QuotaExceededError" ||
-                    e.name === "NS_ERROR_DOM_QUOTA_REACHED")
+                  (e.name === "QuotaExceededError" || e.name === "NS_ERROR_DOM_QUOTA_REACHED")
                 ) {
                   console.warn("Session storage full. Clearing history.");
                   sessionStorage.removeItem("predictionHistory");
@@ -175,21 +173,19 @@ export default function Home() {
                 }
               }
 
-              // Add assistant response
               setMessages((prev) => [
                 ...prev,
                 {
                   id: nanoid(),
                   role: "assistant",
-                  content: `This leaf is likely ${finalResult!.class} with ${
-                    finalResult!.confidence
-                  }% confidence.`,
+                  content: `This leaf is likely ${finalResult!.class} with ${finalResult!.confidence}% confidence.`,
                 },
               ]);
             }
           } catch (error) {
             console.error("Error uploading image:", error);
-            // Fallback to non-streaming request
+
+            // fallback non-streaming request
             try {
               const fallbackResponse = await fetch("/api/predict", {
                 method: "POST",
@@ -197,8 +193,7 @@ export default function Home() {
                 body: JSON.stringify({ data: base64String }),
               });
 
-              const result =
-                (await fallbackResponse.json()) as PredictionResult;
+              const result = (await fallbackResponse.json()) as PredictionResult;
 
               if (fallbackResponse.ok) {
                 const entry: LeafHistoryItem = {
@@ -236,14 +231,12 @@ export default function Home() {
     }
   };
 
-  // Handle LLM question
   const handleLlmQuestion = async () => {
     if (!question) {
       alert("Please provide a question.");
       return;
     }
 
-    // Add user question to messages
     setMessages((prev) => [
       ...prev,
       { id: nanoid(), role: "user", content: question },
@@ -251,19 +244,23 @@ export default function Home() {
     setQuestion("");
     setLoading(true);
 
-    // in handleLlmQuestion()
-
     try {
       const response = await fetch("/api/questions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           disease_name: prediction,
-          questions: question,
+          questions: question.trim(),
+          session_id: sessionId,
         }),
       });
 
       if (!response.ok || !response.body) throw new Error("Streaming failed");
+
+      const newSessionId = response.headers.get("X-Session-ID");
+      if (newSessionId && newSessionId !== sessionId) {
+        setSessionId(newSessionId);
+      }
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder("utf-8");
@@ -302,7 +299,7 @@ export default function Home() {
     }
   };
 
-  // Determine if confetti should be shown
+  // Show confetti only when healthy leaf with high confidence
   const showConfetti =
     prediction?.toLowerCase().includes("healthy") &&
     confidence &&
@@ -338,9 +335,8 @@ export default function Home() {
 
       {/* Main Bento Grid Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
-        {/* Chat/Upload Area - Takes 3 columns on large screens */}
+        {/* Chat/Upload Area */}
         <div className="lg:col-span-3 space-y-6">
-          {/* Welcome message or Chat messages */}
           {messages.length === 0 ? (
             <div className="glass-strong rounded-3xl p-8 md:p-12 text-center bento-item">
               <div className="max-w-2xl mx-auto">
@@ -358,14 +354,12 @@ export default function Home() {
             </div>
           ) : (
             <>
-              {/* Chat Messages */}
               <div className="glass flex-1 overflow-y-auto py-4 rounded-3xl p-6 bento-item">
                 <div className="space-y-4 px-4">
                   {messages.map((msg, idx) => (
                     <ChatMessage key={idx} message={msg} />
                   ))}
 
-                  {/* Loading indicator */}
                   {loading && (
                     <div className="flex justify-center w-full">
                       <ModelLoadingIndicator
@@ -377,7 +371,6 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Chat Input */}
               <div className="glass flex-1 overflow-y-auto py-4 rounded-3xl p-6 bento-item">
                 <div className="space-y-4 px-4">
                   <ChatInterface
@@ -392,9 +385,8 @@ export default function Home() {
           )}
         </div>
 
-        {/* Sidebar - History and Stats */}
+        {/* Sidebar */}
         <div className="lg:col-span-1 space-y-6">
-          {/* History Section */}
           <div className="glass rounded-3xl p-6 bento-item">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-slate-100 to-teal-50 dark:from-slate-800 dark:to-slate-700 border border-teal-200 dark:border-teal-800 flex items-center justify-center">
@@ -423,7 +415,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Stats Card */}
           {history.length > 0 && (
             <div className="glass rounded-3xl p-6 bento-item">
               <div className="flex items-center gap-3 mb-4">
@@ -458,8 +449,7 @@ export default function Home() {
                   </span>
                   <span className="font-bold text-slate-800 dark:text-slate-200">
                     {Math.round(
-                      history.reduce((acc, h) => acc + h.confidence, 0) /
-                        history.length
+                      history.reduce((acc, h) => acc + h.confidence, 0) / history.length
                     )}
                     %
                   </span>
@@ -470,7 +460,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Confetti effect for healthy leaves */}
       {showConfetti && (
         <Confetti
           width={width}
