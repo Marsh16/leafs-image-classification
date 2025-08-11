@@ -26,7 +26,9 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("Thinking...");
   const [isModelReloading, setIsModelReloading] = useState(false);
-  const [currentDateTime, setCurrentDateTime] = useState(formatDateTime(new Date()));
+  const [currentDateTime, setCurrentDateTime] = useState(
+    formatDateTime(new Date())
+  );
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const { width, height } = useWindowSize();
@@ -124,9 +126,15 @@ export default function Home() {
                     if (parsed.status === "loading") {
                       setLoadingMessage(parsed.message);
                       const isReloading =
-                        parsed.message.toLowerCase().includes("model is starting") ||
-                        parsed.message.toLowerCase().includes("model is still loading") ||
-                        parsed.message.toLowerCase().includes("cloud deployment");
+                        parsed.message
+                          .toLowerCase()
+                          .includes("model is starting") ||
+                        parsed.message
+                          .toLowerCase()
+                          .includes("model is still loading") ||
+                        parsed.message
+                          .toLowerCase()
+                          .includes("cloud deployment");
                       setIsModelReloading(isReloading);
                     } else if (parsed.status === "complete") {
                       finalResult = {
@@ -160,11 +168,15 @@ export default function Home() {
               setHistory(updatedHistory);
 
               try {
-                sessionStorage.setItem("predictionHistory", JSON.stringify(updatedHistory));
+                sessionStorage.setItem(
+                  "predictionHistory",
+                  JSON.stringify(updatedHistory)
+                );
               } catch (e) {
                 if (
                   e instanceof DOMException &&
-                  (e.name === "QuotaExceededError" || e.name === "NS_ERROR_DOM_QUOTA_REACHED")
+                  (e.name === "QuotaExceededError" ||
+                    e.name === "NS_ERROR_DOM_QUOTA_REACHED")
                 ) {
                   console.warn("Session storage full. Clearing history.");
                   sessionStorage.removeItem("predictionHistory");
@@ -178,7 +190,9 @@ export default function Home() {
                 {
                   id: nanoid(),
                   role: "assistant",
-                  content: `This leaf is likely ${finalResult!.class} with ${finalResult!.confidence}% confidence.`,
+                  content: `This leaf is likely ${finalResult!.class} with ${
+                    finalResult!.confidence
+                  }% confidence.`,
                 },
               ]);
             }
@@ -193,7 +207,8 @@ export default function Home() {
                 body: JSON.stringify({ data: base64String }),
               });
 
-              const result = (await fallbackResponse.json()) as PredictionResult;
+              const result =
+                (await fallbackResponse.json()) as PredictionResult;
 
               if (fallbackResponse.ok) {
                 const entry: LeafHistoryItem = {
@@ -232,14 +247,15 @@ export default function Home() {
   };
 
   const handleLlmQuestion = async () => {
-    if (!question) {
+    if (!question.trim()) {
       alert("Please provide a question.");
       return;
     }
 
+    // Add user question to messages immediately
     setMessages((prev) => [
       ...prev,
-      { id: nanoid(), role: "user", content: question },
+      { id: nanoid(), role: "user", content: question.trim() },
     ]);
     setQuestion("");
     setLoading(true);
@@ -255,8 +271,11 @@ export default function Home() {
         }),
       });
 
-      if (!response.ok || !response.body) throw new Error("Streaming failed");
+      if (!response.ok || !response.body) {
+        throw new Error(`Streaming failed: ${response.statusText}`);
+      }
 
+      // Get new session id from headers if any
       const newSessionId = response.headers.get("X-Session-ID");
       if (newSessionId && newSessionId !== sessionId) {
         setSessionId(newSessionId);
@@ -264,9 +283,10 @@ export default function Home() {
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder("utf-8");
-
       let fullText = "";
       const newMessageId = nanoid();
+
+      // Add empty assistant message before streaming chunks
       setMessages((prev) => [
         ...prev,
         { id: newMessageId, role: "assistant", content: "" },
@@ -278,6 +298,7 @@ export default function Home() {
         const chunk = decoder.decode(value, { stream: true });
         fullText += chunk;
 
+        // Update the assistant message content incrementally
         setMessages((prev) =>
           prev.map((msg) =>
             msg.id === newMessageId ? { ...msg, content: fullText } : msg
@@ -449,7 +470,8 @@ export default function Home() {
                   </span>
                   <span className="font-bold text-slate-800 dark:text-slate-200">
                     {Math.round(
-                      history.reduce((acc, h) => acc + h.confidence, 0) / history.length
+                      history.reduce((acc, h) => acc + h.confidence, 0) /
+                        history.length
                     )}
                     %
                   </span>

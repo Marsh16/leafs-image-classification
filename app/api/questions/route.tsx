@@ -3,7 +3,7 @@ import { createWatsonx } from "@rama-adi/watsonx-unofficial-ai-provider";
 import { streamText, CoreMessage } from "ai";
 
 const API_KEY = process.env.API_KEY;
-const PROJECT_ID = "55f9d5d9-730c-4c8c-99ef-264b06c34dd1";
+const PROJECT_ID = process.env.PROJECT_ID;
 
 type SessionData = {
   language: "en" | "id";
@@ -13,17 +13,16 @@ type SessionData = {
 
 const sessions = new Map<string, SessionData>();
 
-// Function to limit conversation history to last 6 exchanges (12 messages)
+// Function to clear conversation memory if it exceeds 12 messages
 function limitConversationMemory(history: CoreMessage[]): CoreMessage[] {
-  const MAX_CONVERSATIONS = 12;
-  const MAX_MESSAGES = MAX_CONVERSATIONS * 2; // 6 user + 6 assistant = 12 messages
+  const MAX_MESSAGES = 12;
 
   if (history.length <= MAX_MESSAGES) {
     return history;
   }
 
-  // Keep only the last 12 messages (6 conversations)
-  return history.slice(-MAX_MESSAGES);
+  // Clear all history if over the limit
+  return [];
 }
 
 async function getBearerToken(): Promise<string> {
@@ -144,7 +143,7 @@ export async function POST(req: Request) {
       hasHistory
     );
 
-    // Limit conversation memory to last 6 exchanges
+    // Use full history or empty if cleared
     const limitedHistory = limitConversationMemory(sessionData.history);
 
     // DEBUG: Log the history being sent
@@ -167,8 +166,8 @@ export async function POST(req: Request) {
 
     const messages: CoreMessage[] = [
       { role: "system", content: systemPrompt },
-      ...limitedHistory, // Include only last 6 conversations
-      { role: "user", content: questions }, // Add current question
+      ...limitedHistory,
+      { role: "user", content: questions },
     ];
 
     // DEBUG: Log final messages array structure
@@ -212,25 +211,17 @@ export async function POST(req: Request) {
             responseLength: assistantResponse.length,
           });
 
-          // Add both user question and assistant response to history
+          // Add user question and assistant response
           sessionData.history.push({ role: "user", content: questions });
-          sessionData.history.push({
-            role: "assistant",
-            content: assistantResponse,
-          });
+          sessionData.history.push({ role: "assistant", content: assistantResponse });
 
-          console.log(
-            `After adding - History length: ${sessionData.history.length}`
-          );
-
-          // Apply memory limit - keep only last 6 conversations (12 messages)
+          // Clear history if over the limit instead of slicing
           sessionData.history = limitConversationMemory(sessionData.history);
 
           console.log(
             `After memory limit - History length: ${sessionData.history.length}`
           );
 
-          // Update the session
           sessions.set(sessionId, sessionData);
 
           console.log(
@@ -287,7 +278,6 @@ export async function GET(req: Request) {
       disease_name: "",
     };
 
-    // Debug mode - return detailed info
     if (debug === "true") {
       return new Response(
         JSON.stringify(
@@ -303,7 +293,7 @@ export async function GET(req: Request) {
               0,
               6 - Math.floor(sessionData.history.length / 2)
             ),
-            all_sessions: Array.from(sessions.keys()), // Show all session IDs
+            all_sessions: Array.from(sessions.keys()),
             session_exists: sessions.has(sessionId),
             limited_history: limitConversationMemory(sessionData.history),
           },
