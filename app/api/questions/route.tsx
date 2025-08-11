@@ -18,14 +18,11 @@ async function getBearerToken(): Promise<string> {
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: `apikey=${API_KEY}&grant_type=urn:ibm:params:oauth:grant-type:apikey`,
   });
-
   if (!res.ok) throw new Error("Failed to fetch IBM Watson token");
-
   const data = await res.json();
   return data.access_token;
 }
 
-// Simple Indonesian detection
 function detectLanguageFromText(text: string): "en" | "id" {
   const indonesianWords = [
     "apa",
@@ -47,67 +44,37 @@ function getSystemPrompt(
   language: "en" | "id",
   disease_name: string,
   isFollowup: boolean
-): string {
+) {
   if (language === "id") {
     return isFollowup
-      ? `
-Anda adalah dokter tanaman yang ramah dan berpengetahuan, membantu petani mangga.
-
-Jawablah pertanyaan lanjutan ini secara singkat (2–3 poin) dan langsung ke inti, tetap jelas dan mudah dimengerti.
-
-Pertanyaan terkait penyakit: '${disease_name}'
-`
-      : `
-Anda adalah dokter tanaman yang ramah dan berpengetahuan, siap membantu petani mangga merawat pohonnya.
-
-Daun mangga ini terdiagnosis mengidap: **'${disease_name}'**
-
-Mulailah dengan membantu petani memahami masalah ini:
-1. Apa penyakit ini? Jelaskan dengan jelas dan sederhana.
-2. Gejala apa saja yang perlu diperhatikan?
-3. Perawatan apa yang bisa membantu? Fokus pada solusi organik atau yang mudah didapat jika memungkinkan.
-4. Satu atau dua tips berguna untuk mencegah penyakit ini di masa depan.
-
-Sekarang, jawab pertanyaan petani dengan nada hangat, mendukung, dan mudah dipahami.
-Gunakan poin-poin atau paragraf singkat agar mudah dibaca.
-`;
+      ? `Ini adalah percakapan lanjutan. Ingat semua pertanyaan dan jawaban sebelumnya.
+Jawablah secara singkat (2–3 poin) dan langsung ke inti, tetap jelas dan mudah dipahami.`
+      : `Anda adalah dokter tanaman yang ramah dan berpengetahuan, siap membantu petani mangga.
+Daun mangga ini terdiagnosis: '${disease_name}'.
+1. Apa penyakit ini? Jelaskan sederhana.
+2. Gejala apa yang perlu diperhatikan?
+3. Perawatan yang disarankan (fokus organik).
+4. Tips pencegahan.`;
   }
-
-  // English
   return isFollowup
-    ? `
-You are a friendly and knowledgeable plant doctor.
-
-Answer this follow-up question briefly (2–3 bullet points), getting straight to the point but keeping it clear.
-
-Disease: '${disease_name}'
-`
-    : `
-You are a friendly and knowledgeable plant doctor, here to help a mango farmer care for their trees.
-
-The mango leaf has been diagnosed with: **'${disease_name}'**
-
-Start by helping the farmer understand the issue:
-1. What is this disease? Explain it clearly and simply.
-2. What are the typical symptoms to look out for?
-3. What treatments can help? Focus on organic or easily available solutions when possible.
-4. What are one or two useful tips to prevent this disease in the future.
-
-Keep your tone warm, supportive, and easy to understand.
-`;
+    ? `This is a continuation of the same conversation. Remember all previous questions and answers.
+Answer briefly (2–3 bullet points) and clearly.`
+    : `You are a friendly, knowledgeable plant doctor helping a mango farmer.
+The mango leaf is diagnosed with: '${disease_name}'.
+1. Explain the disease simply.
+2. List key symptoms.
+3. Recommend treatments (focus organic).
+4. Give prevention tips.`;
 }
 
 export async function POST(req: Request) {
   try {
     const { disease_name, questions, session_id, language } = await req.json();
-
     if (!disease_name || !questions) {
-      return new Response(
-        JSON.stringify({
-          error: "Missing required data: disease_name or questions",
-        }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Missing required data" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     const sessionId =
@@ -124,7 +91,7 @@ export async function POST(req: Request) {
         history: [],
       };
       sessions.set(sessionId, sessionData);
-    } else if (language && (language === "id" || language === "en")) {
+    } else if (language === "id" || language === "en") {
       sessionData.language = language;
     }
 
@@ -135,20 +102,25 @@ export async function POST(req: Request) {
       isFollowup
     );
 
-    const messages: CoreMessage[] = [
-      { role: "system", content: systemPrompt },
-      ...sessionData.history,
-      { role: "user", content: questions },
-    ];
+    const messages: CoreMessage[] = isFollowup
+      ? [
+          { role: "system", content: systemPrompt },
+          ...sessionData.history,
+          { role: "user", content: questions },
+        ]
+      : [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: questions },
+        ];
 
     if (messages.length > 21) messages.splice(1, messages.length - 21);
 
     const bearerToken = await getBearerToken();
-
     const watsonxInstance = createWatsonx({
       cluster: "jp-tok",
       projectID: PROJECT_ID,
       bearerToken,
+
     });
 
     const stream = await streamText({
@@ -168,24 +140,26 @@ export async function POST(req: Request) {
             : typeof chunk === "string"
             ? chunk
             : String(chunk);
-
         assistantResponse += text;
         controller.enqueue(chunk);
       },
-      flush() {
-        const updatedHistory = [...(sessionData?.history ?? [])];
-        updatedHistory.push({ role: "user", content: questions });
-        updatedHistory.push({ role: "assistant", content: assistantResponse });
+      async flush() {
+        if (sessionData) {
+          // Push directly to the existing history array
+          sessionData.history.push({ role: "user", content: questions });
+          sessionData.history.push({
+            role: "assistant",
+            content: assistantResponse,
+          });
 
-        if (updatedHistory.length > 20)
-          updatedHistory.splice(0, updatedHistory.length - 20);
+          // Limit history length to 20
+          if (sessionData.history.length > 20) {
+            sessionData.history.splice(0, sessionData.history.length - 20);
+          }
 
-        if (!sessionData) return;
-
-        sessions.set(sessionId, {
-          language: sessionData.language,
-          history: updatedHistory,
-        });
+          // Update the map so future requests see the new history
+          sessions.set(sessionId, sessionData);
+        }
       },
     });
 
@@ -201,7 +175,10 @@ export async function POST(req: Request) {
     console.error("Error generating response:", error);
     return new Response(
       JSON.stringify({ error: "Failed to generate response" }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
     );
   }
 }
@@ -210,19 +187,16 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const sessionId = searchParams.get("session_id");
-
     if (!sessionId) {
-      return new Response(
-        JSON.stringify({ error: "Missing session_id parameter" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Missing session_id" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
     }
-
     const sessionData = sessions.get(sessionId) || {
       language: "en",
       history: [],
     };
-
     return new Response(
       JSON.stringify({
         session_id: sessionId,
@@ -236,7 +210,10 @@ export async function GET(req: Request) {
     console.error("Error retrieving session:", error);
     return new Response(
       JSON.stringify({ error: "Failed to retrieve session" }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
     );
   }
 }
