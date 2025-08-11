@@ -50,6 +50,26 @@ export default function Home() {
     return () => clearInterval(timer);
   }, []);
 
+  const MAX_MESSAGES = 12;
+
+  useEffect(() => {
+    if (messages.length > MAX_MESSAGES) {
+      console.log("Conversation limit reached, clearing session.");
+
+      // Clear local storage keys
+      localStorage.removeItem("plant_doctor_session_id");
+      localStorage.removeItem("plant_doctor_messages");
+
+      // Optionally clear prediction history from sessionStorage too
+      sessionStorage.removeItem("predictionHistory");
+
+      // Reset state
+      setMessages([]);
+      setSessionId(null);
+      setHistory([]);
+    }
+  }, [messages]);
+
   useEffect(() => {
     const savedSessionId = localStorage.getItem("plant_doctor_session_id");
     const savedMessages = localStorage.getItem("plant_doctor_messages");
