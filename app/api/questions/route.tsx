@@ -27,12 +27,27 @@ async function getBearerToken(): Promise<string> {
 
 // Simple Indonesian detection
 function detectLanguageFromText(text: string): "en" | "id" {
-  const indonesianWords = ["apa", "bagaimana", "mengapa", "cara", "tidak", "bisa", "yang", "dan", "atau", "untuk"];
+  const indonesianWords = [
+    "apa",
+    "bagaimana",
+    "mengapa",
+    "cara",
+    "tidak",
+    "bisa",
+    "yang",
+    "dan",
+    "atau",
+    "untuk",
+  ];
   const lower = text.toLowerCase();
-  return indonesianWords.some(w => lower.includes(w)) ? "id" : "en";
+  return indonesianWords.some((w) => lower.includes(w)) ? "id" : "en";
 }
 
-function getSystemPrompt(language: "en" | "id", disease_name: string, isFollowup: boolean): string {
+function getSystemPrompt(
+  language: "en" | "id",
+  disease_name: string,
+  isFollowup: boolean
+): string {
   if (language === "id") {
     return isFollowup
       ? `
@@ -88,19 +103,24 @@ export async function POST(req: Request) {
 
     if (!disease_name || !questions) {
       return new Response(
-        JSON.stringify({ error: "Missing required data: disease_name or questions" }),
+        JSON.stringify({
+          error: "Missing required data: disease_name or questions",
+        }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    const sessionId = session_id || `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const sessionId =
+      session_id ||
+      `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     let sessionData = sessions.get(sessionId);
 
     if (!sessionData) {
       sessionData = {
-        language: language === "id" || language === "en"
-          ? language
-          : detectLanguageFromText(questions),
+        language:
+          language === "id" || language === "en"
+            ? language
+            : detectLanguageFromText(questions),
         history: [],
       };
       sessions.set(sessionId, sessionData);
@@ -109,12 +129,16 @@ export async function POST(req: Request) {
     }
 
     const isFollowup = sessionData.history.length > 0;
-    const systemPrompt = getSystemPrompt(sessionData.language, disease_name, isFollowup);
+    const systemPrompt = getSystemPrompt(
+      sessionData.language,
+      disease_name,
+      isFollowup
+    );
 
     const messages: CoreMessage[] = [
       { role: "system", content: systemPrompt },
       ...sessionData.history,
-      { role: "user", content: questions }
+      { role: "user", content: questions },
     ];
 
     if (messages.length > 21) messages.splice(1, messages.length - 21);
@@ -138,9 +162,10 @@ export async function POST(req: Request) {
 
     const transformStream = new TransformStream({
       transform(chunk, controller) {
-        const text = chunk instanceof Uint8Array
-          ? new TextDecoder().decode(chunk)
-          : typeof chunk === "string"
+        const text =
+          chunk instanceof Uint8Array
+            ? new TextDecoder().decode(chunk)
+            : typeof chunk === "string"
             ? chunk
             : String(chunk);
 
@@ -152,8 +177,10 @@ export async function POST(req: Request) {
         updatedHistory.push({ role: "user", content: questions });
         updatedHistory.push({ role: "assistant", content: assistantResponse });
 
+        if (updatedHistory.length > 20)
+          updatedHistory.splice(0, updatedHistory.length - 20);
 
-        if (updatedHistory.length > 20) updatedHistory.splice(0, updatedHistory.length - 20);
+        if (!sessionData) return;
 
         sessions.set(sessionId, {
           language: sessionData.language,
@@ -191,7 +218,10 @@ export async function GET(req: Request) {
       );
     }
 
-    const sessionData = sessions.get(sessionId) || { language: "en", history: [] };
+    const sessionData = sessions.get(sessionId) || {
+      language: "en",
+      history: [],
+    };
 
     return new Response(
       JSON.stringify({
