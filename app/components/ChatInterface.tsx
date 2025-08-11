@@ -20,7 +20,7 @@ export const ChatInterface = ({
   const recognitionRef = useRef<any>(null);
 
   const [isListening, setIsListening] = useState(false);
-  const [language, setLanguage] = useState("en-US");
+  const [language, setLanguage] = useState("-");
   const [languageConfirmed, setLanguageConfirmed] = useState(false);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -103,6 +103,7 @@ export const ChatInterface = ({
           }}
           className="glass-subtle rounded-xl px-3 py-2 text-sm outline-none cursor-pointer border border-teal-200 dark:border-teal-800"
         >
+          <option value="-">Choose Language</option>
           <option value="en-US">English</option>
           <option value="id-ID">Bahasa Indonesia</option>
         </select>
@@ -160,7 +161,7 @@ export const ChatInterface = ({
           disabled={!question.trim()}
           className="glass-subtle rounded-2xl p-4 bg-gradient-to-br from-teal-400 to-teal-500 hover:from-teal-500 hover:to-teal-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:scale-105 group shadow-sm"
         >
-          <div className="w-10 h-10 flex items-center justify-center text-white font-bold group-hover:scale-110 transition-transform duration-300">
+          <div className="w-10 h-10 flex items-center justify-center font-bold group-hover:scale-110 transition-transform duration-300">
             →
           </div>
         </button>

@@ -148,9 +148,10 @@ export async function POST(req: Request) {
         controller.enqueue(chunk);
       },
       flush() {
-        const updatedHistory = [...sessionData.history];
+        const updatedHistory = [...(sessionData?.history ?? [])];
         updatedHistory.push({ role: "user", content: questions });
         updatedHistory.push({ role: "assistant", content: assistantResponse });
+
 
         if (updatedHistory.length > 20) updatedHistory.splice(0, updatedHistory.length - 20);
 

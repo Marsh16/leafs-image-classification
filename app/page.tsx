@@ -99,31 +99,38 @@ export default function Home() {
               if (done) break;
 
               const chunk = decoder.decode(value, { stream: true });
-              const lines = chunk.split('\n');
+              const lines = chunk.split("\n");
 
               for (const line of lines) {
-                if (line.startsWith('data: ')) {
+                if (line.startsWith("data: ")) {
                   const data = line.slice(6);
-                  if (data === '[DONE]') break;
+                  if (data === "[DONE]") break;
 
                   try {
                     const parsed = JSON.parse(data);
 
-                    if (parsed.status === 'loading') {
+                    if (parsed.status === "loading") {
                       setLoadingMessage(parsed.message);
                       // Check if model is reloading based on message content
-                      const isReloading = parsed.message.toLowerCase().includes('model is starting') ||
-                                        parsed.message.toLowerCase().includes('model is still loading') ||
-                                        parsed.message.toLowerCase().includes('cloud deployment');
+                      const isReloading =
+                        parsed.message
+                          .toLowerCase()
+                          .includes("model is starting") ||
+                        parsed.message
+                          .toLowerCase()
+                          .includes("model is still loading") ||
+                        parsed.message
+                          .toLowerCase()
+                          .includes("cloud deployment");
                       setIsModelReloading(isReloading);
-                    } else if (parsed.status === 'complete') {
+                    } else if (parsed.status === "complete") {
                       finalResult = {
                         class: parsed.class,
                         confidence: parsed.confidence,
                       };
                       setLoadingMessage("Processing complete!");
                       setIsModelReloading(false);
-                    } else if (parsed.status === 'error') {
+                    } else if (parsed.status === "error") {
                       throw new Error(parsed.error);
                     }
                   } catch (parseError) {
@@ -174,7 +181,9 @@ export default function Home() {
                 {
                   id: nanoid(),
                   role: "assistant",
-                  content: `This leaf is likely ${finalResult!.class} with ${finalResult!.confidence}% confidence.`,
+                  content: `This leaf is likely ${finalResult!.class} with ${
+                    finalResult!.confidence
+                  }% confidence.`,
                 },
               ]);
             }
@@ -188,7 +197,8 @@ export default function Home() {
                 body: JSON.stringify({ data: base64String }),
               });
 
-              const result = (await fallbackResponse.json()) as PredictionResult;
+              const result =
+                (await fallbackResponse.json()) as PredictionResult;
 
               if (fallbackResponse.ok) {
                 const entry: LeafHistoryItem = {
@@ -349,8 +359,8 @@ export default function Home() {
           ) : (
             <>
               {/* Chat Messages */}
-              <div className="glass rounded-3xl p-6 bento-item">
-                <div className="space-y-4 max-h-96 overflow-y-auto">
+              <div className="glass flex-1 overflow-y-auto py-4 rounded-3xl p-6 bento-item">
+                <div className="space-y-4 px-4">
                   {messages.map((msg, idx) => (
                     <ChatMessage key={idx} message={msg} />
                   ))}
@@ -368,13 +378,15 @@ export default function Home() {
               </div>
 
               {/* Chat Input */}
-              <div className="glass rounded-3xl p-6 bento-item">
-                <ChatInterface
-                  question={question}
-                  setQuestion={setQuestion}
-                  onSend={handleLlmQuestion}
-                  onUpload={handleImageUpload}
-                />
+              <div className="glass flex-1 overflow-y-auto py-4 rounded-3xl p-6 bento-item">
+                <div className="space-y-4 px-4">
+                  <ChatInterface
+                    question={question}
+                    setQuestion={setQuestion}
+                    onSend={handleLlmQuestion}
+                    onUpload={handleImageUpload}
+                  />
+                </div>
               </div>
             </>
           )}
@@ -425,19 +437,31 @@ export default function Home() {
 
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-slate-600 dark:text-slate-400">Total Scans</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200">{history.length}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-slate-600 dark:text-slate-400">Healthy Leaves</span>
-                  <span className="font-bold text-teal-600 dark:text-teal-400">
-                    {history.filter(h => h.class === 'Healthy').length}
+                  <span className="text-sm text-slate-600 dark:text-slate-400">
+                    Total Scans
+                  </span>
+                  <span className="font-bold text-slate-800 dark:text-slate-200">
+                    {history.length}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-slate-600 dark:text-slate-400">Avg Confidence</span>
+                  <span className="text-sm text-slate-600 dark:text-slate-400">
+                    Healthy Leaves
+                  </span>
+                  <span className="font-bold text-teal-600 dark:text-teal-400">
+                    {history.filter((h) => h.class === "Healthy").length}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-slate-600 dark:text-slate-400">
+                    Avg Confidence
+                  </span>
                   <span className="font-bold text-slate-800 dark:text-slate-200">
-                    {Math.round(history.reduce((acc, h) => acc + h.confidence, 0) / history.length)}%
+                    {Math.round(
+                      history.reduce((acc, h) => acc + h.confidence, 0) /
+                        history.length
+                    )}
+                    %
                   </span>
                 </div>
               </div>
