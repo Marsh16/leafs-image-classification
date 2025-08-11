@@ -56,6 +56,68 @@ async function preprocessBase64Image(base64: string): Promise<number[][][][]> {
   return [imageArray]; // shape: [1, height, width, 3]
 }
 
+async function tryWatsonInferenceUntilReady(
+  bearerToken: string,
+  inputData: number[][][][],
+  encoder?: TextEncoder,
+  controller?: ReadableStreamDefaultController,
+  maxWaitMs = 180000 // 3 minutes max
+): Promise<Response> {
+  const startTime = Date.now();
+  let isModelReloading = false;
+  let attempt = 0;
+  let waitMs = 3000;
+
+  while (true) {
+    attempt++;
+    const response = await fetch(WATSON_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${bearerToken}`,
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ input_data: [{ values: inputData }] }),
+    });
+
+    if (response.ok) {
+      if (encoder && controller && isModelReloading) {
+        sendStreamUpdate(encoder, controller, "Model is ready! Processing your image...");
+      }
+      return response;
+    }
+
+    const errorText = await response.text();
+    const reloading = isModelReloadingError(response, errorText);
+
+    if (reloading && !isModelReloading) {
+      isModelReloading = true;
+      if (encoder && controller) {
+        sendStreamUpdate(encoder, controller, "Model is starting up from cloud deployment. Please wait...");
+      }
+    }
+
+    // Check timeout
+    if (Date.now() - startTime > maxWaitMs) {
+      throw new Error(`Model did not become ready within ${maxWaitMs / 1000}s`);
+    }
+
+    // Increase wait time slightly if reloading
+    const currentWait = reloading ? Math.min(waitMs * 1.5, 15000) : waitMs;
+    if (encoder && controller) {
+      sendStreamUpdate(
+        encoder,
+        controller,
+        reloading
+          ? `Model is still loading... Retrying in ${currentWait / 1000}s (attempt ${attempt})`
+          : `Retrying prediction in ${currentWait / 1000}s (attempt ${attempt})`
+      );
+    }
+    await delay(currentWait);
+  }
+}
+
+
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -178,13 +240,11 @@ export async function POST(req: NextRequest) {
           try {
             sendStreamUpdate(encoder, controller, "Starting prediction...");
 
-            const response = await tryWatsonInference(
+            const response = await tryWatsonInferenceUntilReady(
               bearerToken,
               inputData,
               encoder,
-              controller,
-              8, // More retries for streaming
-              3000
+              controller,              
             );
 
             sendStreamUpdate(encoder, controller, "Processing results...");
