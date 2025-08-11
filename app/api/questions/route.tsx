@@ -3,7 +3,7 @@ import { createWatsonx } from "@rama-adi/watsonx-unofficial-ai-provider";
 import { streamText, CoreMessage } from "ai";
 
 const API_KEY = process.env.API_KEY;
-const PROJECT_ID = process.env.PROJECT_ID;
+const PROJECT_ID = "55f9d5d9-730c-4c8c-99ef-264b06c34dd1";
 
 type SessionData = {
   language: "en" | "id";
